@@ -5,6 +5,12 @@
 @tailwind utilities;
 
 @layer base {
+  /* Alteryx Green Background */
+  body {
+    background: linear-gradient(135deg, #1a5f3f 0%, #2d8f5f 50%, #1a5f3f 100%);
+    min-height: 100vh;
+  }
+  
   /* Fix for browser compatibility warnings */
   html {
     -webkit-text-size-adjust: 100%;

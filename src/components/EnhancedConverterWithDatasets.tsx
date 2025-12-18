@@ -32,6 +32,7 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [savedWorkflows, setSavedWorkflows] = useState<any[]>([]);
+  const [convertedFiles, setConvertedFiles] = useState<Set<string>>(new Set());
   const [showDatasetUploader, setShowDatasetUploader] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { settings } = useSettings();
@@ -307,6 +308,9 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
         localStorage.setItem('saved_workflows', JSON.stringify(existingWorkflows));
         loadSavedWorkflows();
         loadUploadedFiles();
+        
+        // Mark file as converted
+        setConvertedFiles(prev => new Set([...prev, filename]));
       }
       
       // Show dataset uploader option
@@ -398,75 +402,108 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
 
       {/* Uploaded Files Section */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Database className="w-5 h-5 text-blue-400" />
-          <h3 className="text-xl font-semibold text-white">Select from Uploaded Files</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Database className="w-5 h-5 text-blue-400" />
+            <h3 className="text-xl font-semibold text-white">Select from Uploaded Files</h3>
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+          >
+            <Upload className="w-4 h-4" />
+            Upload Files
+          </button>
         </div>
         {uploadedFiles.length === 0 ? (
           <div className="text-center py-8">
             <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-400">No uploaded files found. Upload files in Data Storage first.</p>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm mx-auto"
+            >
+              <Upload className="w-4 h-4" />
+              Upload Your First File
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {uploadedFiles.map((file, index) => (
-              <div
-                key={file._id || file.id || index}
-                onClick={() => selectFileFromStorage(file)}
-                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                  selectedFile?._id === file._id
-                    ? 'border-blue-400 bg-blue-500/10'
-                    : 'border-white/10 hover:border-white/20 bg-white/5'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-blue-400" />
-                    <span className="text-white text-sm font-medium truncate">{file.filename}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {selectedFile?._id === file._id && (
+          <div className="space-y-3">
+            {uploadedFiles.map((file, index) => {
+              const isConverted = convertedFiles.has(file.filename);
+              const isSelected = selectedFile?._id === file._id;
+              
+              return (
+                <div key={file._id || file.id || index} className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <FileText className="w-5 h-5 text-blue-400" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-white font-medium">{file.filename}</h4>
+                          {isConverted && (
+                            <span className="px-2 py-1 bg-green-500/20 border border-green-500/50 text-green-300 text-xs rounded">
+                              ✓ Converted
+                            </span>
+                          )}
+                          {isSelected && (
+                            <span className="px-2 py-1 bg-blue-500/20 border border-blue-500/50 text-blue-300 text-xs rounded">
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">
+                          {(file.file_size / 1024).toFixed(1)} KB • {new Date(file.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedFile(null);
-                          setXmlInput('');
-                          setCustomFilename('');
-                          setDatasets([]);
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedFile(null);
+                            setXmlInput('');
+                            setCustomFilename('');
+                            setDatasets([]);
+                          } else {
+                            selectFileFromStorage(file);
+                          }
                         }}
-                        className="text-yellow-400 hover:text-yellow-300 text-xs"
+                        className={`px-3 py-1 text-xs rounded ${
+                          isSelected 
+                            ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
                       >
-                        Deselect
+                        {isSelected ? 'Deselect' : 'Select'}
                       </button>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const files = JSON.parse(localStorage.getItem('file_storage') || '[]');
-                        const filtered = files.filter((f: any) => f._id !== file._id);
-                        localStorage.setItem('file_storage', JSON.stringify(filtered));
-                        if (selectedFile?._id === file._id) {
-                          setSelectedFile(null);
-                          setXmlInput('');
-                          setCustomFilename('');
-                          setDatasets([]);
-                        }
-                        loadUploadedFiles();
-                      }}
-                      className="text-red-400 hover:text-red-300 text-xs"
-                    >
-                      Delete
-                    </button>
+                      <button
+                        onClick={() => {
+                          const files = JSON.parse(localStorage.getItem('file_storage') || '[]');
+                          const filtered = files.filter((f: any) => f._id !== file._id);
+                          localStorage.setItem('file_storage', JSON.stringify(filtered));
+                          if (selectedFile?._id === file._id) {
+                            setSelectedFile(null);
+                            setXmlInput('');
+                            setCustomFilename('');
+                            setDatasets([]);
+                          }
+                          setConvertedFiles(prev => {
+                            const newSet = new Set(prev);
+                            newSet.delete(file.filename);
+                            return newSet;
+                          });
+                          loadUploadedFiles();
+                        }}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="text-xs text-gray-400">
-                  {(file.file_size / 1024).toFixed(1)} KB • {new Date(file.created_at).toLocaleDateString()}
-                </div>
-                {selectedFile?._id === file._id && (
-                  <div className="mt-2 text-xs text-green-400">✓ Selected</div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

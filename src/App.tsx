@@ -130,8 +130,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <nav className="border-b border-white/10 bg-black/20 backdrop-blur-sm relative z-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-green-700 to-blue-900">
+      <nav className="border-b border-white/10 bg-gradient-to-r from-blue-900/80 via-purple-900/80 to-blue-900/80 backdrop-blur-sm relative z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20 py-4">
             <div className="flex items-center gap-3">
@@ -382,10 +382,10 @@ function App() {
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
               <h1 className="text-4xl font-bold text-white mb-4">
-                Enhanced XML to JSON Converter
+                Designer Desktop to Designer Cloud Converter
               </h1>
               <p className="text-gray-400 text-lg">
-                Convert XML files to JSON with workflow and dataset management for POC and demo purposes.
+                Advanced XML to JSON conversion with comprehensive workflow and dataset management capabilities.
               </p>
             </div>
             

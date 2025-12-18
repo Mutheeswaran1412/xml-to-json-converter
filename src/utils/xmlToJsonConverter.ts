@@ -486,102 +486,30 @@ function getUpstreamFields(upstreamIds: string[], nodesMap: Map<string, any>): a
   return fields;
 }
 
-// 🔥 FIXED: Update Select tool metadata
+// 🔥 PRESERVE EXACT DESKTOP SELECTION - NO MODIFICATIONS
 function updateSelectMetadata(node: any, upstreamFields: any[]): void {
   const config = node.Properties?.Configuration;
   if (!config) return;
   
-  console.log(`🔧 Updating Select tool ${node['@ToolID']} with ${upstreamFields.length} upstream fields`);
+  console.log(`🔧 Preserving EXACT Select tool ${node['@ToolID']} configuration from desktop`);
   
-  // Initialize SelectFields if missing
+  // DON'T modify SelectFields - preserve exactly as saved from desktop
   if (!config.SelectFields) {
     config.SelectFields = { SelectField: [] };
+    return;
   }
   
   let selectFields = Array.isArray(config.SelectFields.SelectField)
     ? config.SelectFields.SelectField
     : [config.SelectFields.SelectField];
   
-  // Filter out empty or invalid fields
-  selectFields = selectFields.filter((f: any) => f && typeof f === 'object');
+  // PRESERVE EXACT SELECTION - no modifications
+  console.log(`   🔒 Preserving ${selectFields.length} fields exactly as configured in desktop`);
   
-  // If fields are unknown or missing, populate from upstream
-  const hasUnknownFields = selectFields.length === 0 || 
-    selectFields.some((f: any) => !f["@field"] || f["@field"] === "*Unknown" || f["@field"] === "*");
-  
-  if (hasUnknownFields && upstreamFields.length > 0) {
-    console.log(`   ✅ Populating ${upstreamFields.length} fields from upstream`);
-    selectFields = upstreamFields.map((f: any) => ({
-      "@field": f["@name"],
-      "@selected": "True",
-      "@type": f["@type"] || "V_String",
-      "@size": f["@size"] || "254"
-    }));
-  } else {
-    // Validate and enrich existing fields with upstream data
-    const upstreamFieldMap = new Map(upstreamFields.map(f => [f["@name"], f]));
-    
-    selectFields = selectFields.map((sf: any) => {
-      const fieldName = sf["@field"];
-      const upstreamField = upstreamFieldMap.get(fieldName);
-      
-      if (upstreamField) {
-        // Field exists in upstream - enrich with type info
-        const result: any = {
-          "@field": fieldName,
-          "@selected": sf["@selected"] || "True",
-          "@type": sf["@type"] || upstreamField["@type"] || "V_String",
-          "@size": sf["@size"] || upstreamField["@size"] || "254"
-        };
-        
-        // Only add @rename if it exists and is different from field name
-        if (sf["@rename"] && sf["@rename"] !== fieldName) {
-          result["@rename"] = sf["@rename"];
-        }
-        
-        return result;
-      } else {
-        // Field doesn't exist in upstream - mark as missing but keep it
-        console.warn(`   ⚠️ Field "${fieldName}" not found in upstream, keeping with selected=False`);
-        const result: any = {
-          "@field": fieldName,
-          "@selected": "False",
-          "@type": sf["@type"] || "V_String",
-          "@size": sf["@size"] || "254"
-        };
-        
-        // Preserve rename even if field is missing
-        if (sf["@rename"] && sf["@rename"] !== fieldName) {
-          result["@rename"] = sf["@rename"];
-        }
-        
-        return result;
-      }
-    });
-    
-    // Add any upstream fields that are missing from SelectFields
-    upstreamFields.forEach((uf: any) => {
-      const fieldName = uf["@name"];
-      const exists = selectFields.some((sf: any) => sf["@field"] === fieldName);
-      if (!exists) {
-        console.log(`   ➕ Adding missing field "${fieldName}" from upstream`);
-        selectFields.push({
-          "@field": fieldName,
-          "@selected": "True",
-          "@type": uf["@type"] || "V_String",
-          "@size": uf["@size"] || "254"
-        });
-      }
-    });
-  }
-  
-  config.SelectFields.SelectField = selectFields;
-  
-  // Update MetaInfo based on selected fields only
+  // Create MetaInfo based ONLY on fields marked as selected="True" in original XML
   const outputFields = selectFields
     .filter((sf: any) => sf["@selected"] === "True")
     .map((sf: any) => {
-      // Use renamed field name if it exists, otherwise use original field name
       const outputName = sf["@rename"] || sf["@field"];
       return {
         "@name": outputName,
@@ -598,7 +526,7 @@ function updateSelectMetadata(node: any, upstreamFields: any[]): void {
     }
   };
   
-  console.log(`   ✅ Select tool configured: ${selectFields.length} total fields, ${outputFields.length} selected`);
+  console.log(`   ✅ Select tool preserved: ${selectFields.length} total fields, ${outputFields.length} selected (EXACT desktop match)`);
 }
 
 // 🔥 FIXED: Update Union tool metadata
@@ -1035,32 +963,40 @@ function convertFilterTool(cloudNode: any, originalNode: any): void {
   
   cloudNode.Properties = cloudNode.Properties || {};
   
-  // Preserve original filter configuration
+  // PRESERVE EXACT DESKTOP FILTER CONFIGURATION
   if (originalNode.Properties?.Configuration) {
     cloudNode.Properties.Configuration = JSON.parse(JSON.stringify(originalNode.Properties.Configuration));
+    
+    const config = cloudNode.Properties.Configuration;
+    console.log(`   🔧 Filter expression: ${config.Expression}`);
+    console.log(`   🔧 Filter mode: ${config.Mode}`);
   } else {
     cloudNode.Properties.Configuration = {
-      Expression: {}
+      Expression: "",
+      Mode: "Simple"
     };
   }
   
-  // Preserve MetaInfo for both True and False outputs
+  // Ensure MetaInfo for BOTH True and False outputs
   if (originalNode.Properties?.MetaInfo) {
     cloudNode.Properties.MetaInfo = JSON.parse(JSON.stringify(originalNode.Properties.MetaInfo));
   } else {
+    // Create MetaInfo for both outputs if missing
     cloudNode.Properties.MetaInfo = [
       {
         "@connection": "True",
         "RecordInfo": { "Field": [] }
       },
       {
-        "@connection": "False",
+        "@connection": "False", 
         "RecordInfo": { "Field": [] }
       }
     ];
   }
   
   cloudNode.Properties.Dependencies = { "Implicit": {} };
+  
+  console.log(`   ✅ Filter tool configured with TRUE and FALSE outputs`);
 }
 
 function convertFormulaTool(cloudNode: any, originalNode: any): void {
@@ -1240,29 +1176,37 @@ function convertUnionTool(cloudNode: any, originalNode: any): void {
   
   cloudNode.Properties = cloudNode.Properties || {};
   
-  // Preserve original union configuration
+  // PRESERVE EXACT DESKTOP UNION CONFIGURATION
   if (originalNode.Properties?.Configuration) {
     cloudNode.Properties.Configuration = JSON.parse(JSON.stringify(originalNode.Properties.Configuration));
+    
+    const config = cloudNode.Properties.Configuration;
+    console.log(`   🔧 Preserved Union configuration:`);
+    console.log(`     - Mode: ${config.Mode}`);
+    console.log(`     - ErrorMode: ${config.ByName_ErrorMode}`);
+    console.log(`     - OutputMode: ${config.ByName_OutputMode}`);
+    
+    // Ensure proper attribute format for SetOutputOrder
+    if (config.SetOutputOrder && typeof config.SetOutputOrder === 'string') {
+      config.SetOutputOrder = { "@value": config.SetOutputOrder };
+    }
   } else {
     cloudNode.Properties.Configuration = {
       "ByName_ErrorMode": "Warning",
-      "ByName_OutputMode": "All",
+      "ByName_OutputMode": "All", 
       "Mode": "ByName",
       "SetOutputOrder": { "@value": "False" }
     };
   }
   
-  // Preserve MetaInfo (will be updated during metadata propagation)
+  // Preserve MetaInfo exactly as is
   if (originalNode.Properties?.MetaInfo) {
     cloudNode.Properties.MetaInfo = JSON.parse(JSON.stringify(originalNode.Properties.MetaInfo));
-  } else {
-    cloudNode.Properties.MetaInfo = {
-      "@connection": "Output",
-      "RecordInfo": { "Field": [] }
-    };
   }
   
   cloudNode.Properties.Dependencies = { "Implicit": {} };
+  
+  console.log(`   ✅ Union tool configured for cloud compatibility`);
 }
 
 function convertJoinTool(cloudNode: any, originalNode: any): void {
@@ -1345,16 +1289,21 @@ function convertSummarizeTool(cloudNode: any, originalNode: any): void {
   
   cloudNode.Properties = cloudNode.Properties || {};
   
-  // Preserve original configuration
+  // PRESERVE EXACT DESKTOP SUMMARIZE CONFIGURATION
   if (originalNode.Properties?.Configuration) {
     cloudNode.Properties.Configuration = JSON.parse(JSON.stringify(originalNode.Properties.Configuration));
     
-    // Ensure SummarizeFields is properly structured
     const config = cloudNode.Properties.Configuration;
     if (config.SummarizeFields?.SummarizeField) {
+      // Ensure array format
       if (!Array.isArray(config.SummarizeFields.SummarizeField)) {
         config.SummarizeFields.SummarizeField = [config.SummarizeFields.SummarizeField];
       }
+      
+      console.log(`   🔧 Preserved ${config.SummarizeFields.SummarizeField.length} summarize fields from desktop`);
+      config.SummarizeFields.SummarizeField.forEach((sf: any) => {
+        console.log(`     - Field: ${sf['@field']}, Action: ${sf['@action']}, Rename: ${sf['@rename']}`);
+      });
     }
   } else {
     cloudNode.Properties.Configuration = {
@@ -1364,14 +1313,9 @@ function convertSummarizeTool(cloudNode: any, originalNode: any): void {
     };
   }
   
-  // Preserve MetaInfo (will be updated during metadata propagation if needed)
+  // Preserve MetaInfo exactly as is
   if (originalNode.Properties?.MetaInfo) {
     cloudNode.Properties.MetaInfo = JSON.parse(JSON.stringify(originalNode.Properties.MetaInfo));
-  } else {
-    cloudNode.Properties.MetaInfo = {
-      "@connection": "Output",
-      "RecordInfo": { "Field": [] }
-    };
   }
   
   cloudNode.Properties.Dependencies = { "Implicit": {} };
@@ -1439,13 +1383,25 @@ function removeCycles(connections: any[]): any[] {
   const validConnections: any[] = [];
   const edges = new Set<string>();
   
+  // Track Filter tool outputs to ensure both TRUE and FALSE are connected
+  const filterOutputs = new Map<string, Set<string>>();
+  
   connections.forEach(conn => {
     const from = conn.Origin?.["@ToolID"];
     const to = conn.Destination?.["@ToolID"];
+    const fromConnection = conn.Origin?.["@Connection"];
     
     if (from && to && from !== to) {
       const edge = `${from}->${to}`;
       const reverseEdge = `${to}->${from}`;
+      
+      // Track Filter outputs
+      if (fromConnection === "True" || fromConnection === "False") {
+        if (!filterOutputs.has(from)) {
+          filterOutputs.set(from, new Set());
+        }
+        filterOutputs.get(from)!.add(fromConnection);
+      }
       
       if (!edges.has(reverseEdge)) {
         edges.add(edge);
@@ -1456,8 +1412,19 @@ function removeCycles(connections: any[]): any[] {
     }
   });
   
+  // Warn about disconnected Filter outputs
+  filterOutputs.forEach((outputs, toolId) => {
+    if (outputs.size === 1) {
+      const connected = Array.from(outputs)[0];
+      const missing = connected === "True" ? "False" : "True";
+      console.warn(`⚠️ Filter tool ${toolId}: ${missing} output is DISCONNECTED - this may cause workflow failure`);
+    }
+  });
+  
   return validConnections;
 }
+
+
 
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

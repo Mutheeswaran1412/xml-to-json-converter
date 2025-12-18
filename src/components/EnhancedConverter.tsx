@@ -18,6 +18,7 @@ export function EnhancedConverter({ onConvert }: EnhancedConverterProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Array<{line: number, message: string}>>([]);
   const [fileType, setFileType] = useState<'yxmd' | 'generic' | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{name: string, size: number, type: string, content: string}>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { settings } = useSettings();
 
@@ -67,6 +68,23 @@ export function EnhancedConverter({ onConvert }: EnhancedConverterProps) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
+      
+      // Add to uploaded files list
+      const newFile = {
+        name: file.name,
+        size: file.size,
+        type: file.type || 'text/xml',
+        content
+      };
+      
+      setUploadedFiles(prev => {
+        const exists = prev.find(f => f.name === file.name);
+        if (exists) {
+          return prev.map(f => f.name === file.name ? newFile : f);
+        }
+        return [...prev, newFile];
+      });
+      
       setXmlInput(content);
       setError('');
       
@@ -99,11 +117,20 @@ export function EnhancedConverter({ onConvert }: EnhancedConverterProps) {
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileRead(file);
-      e.target.value = '';
-    }
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => handleFileRead(file));
+    e.target.value = '';
+  };
+
+  const loadFileFromList = (fileContent: string, fileName: string) => {
+    setXmlInput(fileContent);
+    setError('');
+    setSuccess(`Loaded: ${fileName}`);
+    setTimeout(() => setSuccess(''), 2000);
+  };
+
+  const removeFile = (fileName: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.name !== fileName));
   };
 
   const handleConvert = async () => {
@@ -216,7 +243,56 @@ export function EnhancedConverter({ onConvert }: EnhancedConverterProps) {
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6 h-[600px]">
+    <div className="space-y-4">
+      {/* Uploaded Files List - Row Layout */}
+      {uploadedFiles.length > 0 && (
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-white font-medium">Uploaded Files ({uploadedFiles.length})</h3>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded flex items-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Upload Files
+            </button>
+          </div>
+          <div className="space-y-2">
+            {uploadedFiles.map((file, index) => (
+              <div 
+                key={index}
+                className="flex items-center justify-between bg-gray-900/50 rounded-lg p-3 hover:bg-gray-900/70 transition-colors"
+              >
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-8 h-8 bg-blue-500/20 rounded flex items-center justify-center">
+                    <span className="text-blue-400 text-xs font-bold">{file.name.split('.').pop()?.toUpperCase()}</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">{file.name}</p>
+                    <p className="text-gray-400 text-xs">{(file.size / 1024).toFixed(2)} KB</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => loadFileFromList(file.content, file.name)}
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
+                  >
+                    Load
+                  </button>
+                  <button
+                    onClick={() => removeFile(file.name)}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid lg:grid-cols-2 gap-6 h-[600px]">
       {/* XML Input Panel */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 flex flex-col">
         <div className="flex items-center justify-between mb-4">
@@ -267,6 +343,7 @@ export function EnhancedConverter({ onConvert }: EnhancedConverterProps) {
               type="file"
               accept=".xml,.yxmd,text/xml"
               onChange={handleFileUpload}
+              multiple
               className="hidden"
               title="Select XML or YXMD file to upload"
               placeholder="Choose file"
@@ -284,9 +361,10 @@ export function EnhancedConverter({ onConvert }: EnhancedConverterProps) {
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm flex items-center gap-2"
           >
-            Browse File
+            <Upload className="w-4 h-4" />
+            Browse Desktop Files
           </button>
           <button
             onClick={async () => {
@@ -391,6 +469,7 @@ export function EnhancedConverter({ onConvert }: EnhancedConverterProps) {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
