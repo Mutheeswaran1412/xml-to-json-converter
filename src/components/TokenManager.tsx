@@ -74,25 +74,25 @@ export function TokenManager() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-4 flex items-center gap-3">
-          <Shield className="w-10 h-10 text-blue-400" />
+        <h1 className="text-4xl font-bold text-black mb-4 flex items-center gap-3">
+          <Shield className="w-10 h-10 text-blue-600" />
           Token Management
         </h1>
-        <p className="text-gray-400 text-lg">
+        <p className="text-black text-lg">
           Manage API access and refresh tokens for secure authentication.
         </p>
       </div>
 
       {/* Token Status */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-            <Key className="w-5 h-5 text-green-400" />
+          <h3 className="text-xl font-semibold text-black flex items-center gap-2">
+            <Key className="w-5 h-5 text-green-600" />
             Token Status
           </h3>
           <button
             onClick={checkTokenStatus}
-            className="text-blue-400 hover:text-blue-300 text-sm"
+            className="text-blue-600 hover:text-blue-800 text-sm"
           >
             Check Status
           </button>
@@ -104,7 +104,7 @@ export function TokenManager() {
           ) : (
             <AlertCircle className="w-5 h-5 text-yellow-400" />
           )}
-          <span className="text-gray-300">{status}</span>
+          <span className="text-black">{status}</span>
         </div>
 
         {tokenManager.hasTokens() && (
@@ -128,12 +128,12 @@ export function TokenManager() {
       </div>
 
       {/* Token Input */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Configure Tokens</h3>
+          <h3 className="text-xl font-semibold text-black">Configure Tokens</h3>
           <button
             onClick={() => setShowTokens(!showTokens)}
-            className="flex items-center gap-2 text-gray-400 hover:text-white text-sm"
+            className="flex items-center gap-2 text-black hover:text-gray-700 text-sm"
           >
             {showTokens ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             {showTokens ? 'Hide' : 'Show'} Tokens
@@ -142,7 +142,7 @@ export function TokenManager() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-black mb-2">
               Access Token *
             </label>
             <input
@@ -150,12 +150,12 @@ export function TokenManager() {
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
               placeholder="Enter access token"
-              className="w-full bg-gray-900/50 border border-white/20 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-blue-500"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-black mb-2">
               Refresh Token *
             </label>
             <input
@@ -163,19 +163,19 @@ export function TokenManager() {
               value={refreshToken}
               onChange={(e) => setRefreshToken(e.target.value)}
               placeholder="Enter refresh token"
-              className="w-full bg-gray-900/50 border border-white/20 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-blue-500"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-black mb-2">
               Expires In (seconds)
             </label>
             <input
               type="number"
               value={expiresIn}
               onChange={(e) => setExpiresIn(parseInt(e.target.value) || 3600)}
-              className="w-full bg-gray-900/50 border border-white/20 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-black text-sm focus:outline-none focus:border-blue-500"
             />
           </div>
 
@@ -190,7 +190,7 @@ export function TokenManager() {
 
       {/* Status Messages */}
       {error && (
-        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5" />
             <span>{error}</span>

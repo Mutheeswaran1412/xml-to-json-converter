@@ -41,23 +41,23 @@ export function ApiDocs() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Code className="w-6 h-6 text-blue-400" />
-          <h2 className="text-xl font-semibold text-white">REST API Documentation</h2>
+          <Code className="w-6 h-6 text-blue-600" />
+          <h2 className="text-xl font-semibold text-black">REST API Documentation</h2>
         </div>
         
         <div className="space-y-6">
           {/* API Key Section */}
           <div>
-            <h3 className="text-lg font-medium text-white mb-3">Authentication</h3>
+            <h3 className="text-lg font-medium text-black mb-3">Authentication</h3>
             <div className="flex gap-2 mb-3">
               <input
                 type="text"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="Your API Key"
-                className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-black"
               />
               <button
                 onClick={generateApiKey}
@@ -67,35 +67,35 @@ export function ApiDocs() {
                 Generate
               </button>
             </div>
-            <p className="text-gray-400 text-sm">Include your API key in the Authorization header: Bearer YOUR_API_KEY</p>
+            <p className="text-black text-sm">Include your API key in the Authorization header: Bearer YOUR_API_KEY</p>
           </div>
 
           {/* Endpoints */}
           <div>
-            <h3 className="text-lg font-medium text-white mb-3">Endpoints</h3>
+            <h3 className="text-lg font-medium text-black mb-3">Endpoints</h3>
             
             <div className="space-y-4">
-              <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-1 bg-green-600 text-white text-xs rounded">POST</span>
-                    <code className="text-blue-300">/api/convert</code>
+                    <code className="text-blue-600">/api/convert</code>
                   </div>
                   <button
                     type="button"
                     onClick={() => copyToClipboard('POST /api/convert')}
-                    className="text-gray-400 hover:text-white"
+                    className="text-gray-600 hover:text-black"
                     title="Copy endpoint"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-gray-300 mb-3">Convert XML to JSON</p>
+                <p className="text-black mb-3">Convert XML to JSON</p>
                 
                 <div className="space-y-3">
                   <div>
-                    <h4 className="text-white font-medium mb-2">Request Body:</h4>
-                    <pre className="bg-black/30 rounded p-3 text-sm text-gray-300 overflow-x-auto">
+                    <h4 className="text-black font-medium mb-2">Request Body:</h4>
+                    <pre className="bg-gray-100 rounded p-3 text-sm text-black overflow-x-auto">
 {`{
   "xml": "<root><item>value</item></root>",
   "options": {
@@ -107,8 +107,8 @@ export function ApiDocs() {
                   </div>
                   
                   <div>
-                    <h4 className="text-white font-medium mb-2">Response:</h4>
-                    <pre className="bg-black/30 rounded p-3 text-sm text-gray-300 overflow-x-auto">
+                    <h4 className="text-black font-medium mb-2">Response:</h4>
+                    <pre className="bg-gray-100 rounded p-3 text-sm text-black overflow-x-auto">
 {`{
   "success": true,
   "data": {
@@ -126,54 +126,54 @@ export function ApiDocs() {
                 </div>
               </div>
 
-              <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded">GET</span>
-                    <code className="text-blue-300">/api/history</code>
+                    <code className="text-blue-600">/api/history</code>
                   </div>
                   <button
                     type="button"
                     onClick={() => copyToClipboard('GET /api/history')}
-                    className="text-gray-400 hover:text-white"
+                    className="text-gray-600 hover:text-black"
                     title="Copy endpoint"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-gray-300">Get conversion history</p>
+                <p className="text-black">Get conversion history</p>
               </div>
 
-              <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-1 bg-purple-600 text-white text-xs rounded">POST</span>
-                    <code className="text-blue-300">/api/batch</code>
+                    <code className="text-blue-600">/api/batch</code>
                   </div>
                   <button
                     type="button"
                     onClick={() => copyToClipboard('POST /api/batch')}
-                    className="text-gray-400 hover:text-white"
+                    className="text-gray-600 hover:text-black"
                     title="Copy endpoint"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-gray-300">Batch convert multiple XML files</p>
+                <p className="text-black">Batch convert multiple XML files</p>
               </div>
             </div>
           </div>
 
           {/* API Tester */}
           <div>
-            <h3 className="text-lg font-medium text-white mb-3">API Tester</h3>
+            <h3 className="text-lg font-medium text-black mb-3">API Tester</h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-gray-300 mb-2">Test XML:</label>
+                <label className="block text-black mb-2">Test XML:</label>
                 <textarea
                   value={testXml}
                   onChange={(e) => setTestXml(e.target.value)}
-                  className="w-full h-24 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                  className="w-full h-24 bg-white border border-gray-300 rounded-lg px-3 py-2 text-black font-mono text-sm"
                   title="Enter XML content to test the API"
                   placeholder="<root><item>test</item></root>"
                 />
@@ -190,8 +190,8 @@ export function ApiDocs() {
               
               {response && (
                 <div>
-                  <label className="block text-gray-300 mb-2">Response:</label>
-                  <pre className="bg-black/30 rounded p-3 text-sm text-gray-300 overflow-x-auto max-h-48">
+                  <label className="block text-black mb-2">Response:</label>
+                  <pre className="bg-gray-100 rounded p-3 text-sm text-black overflow-x-auto max-h-48">
                     {response}
                   </pre>
                 </div>
@@ -201,12 +201,12 @@ export function ApiDocs() {
 
           {/* Code Examples */}
           <div>
-            <h3 className="text-lg font-medium text-white mb-3">Code Examples</h3>
+            <h3 className="text-lg font-medium text-black mb-3">Code Examples</h3>
             
             <div className="space-y-4">
               <div>
-                <h4 className="text-white font-medium mb-2">JavaScript/Node.js:</h4>
-                <pre className="bg-black/30 rounded p-3 text-sm text-gray-300 overflow-x-auto">
+                <h4 className="text-black font-medium mb-2">JavaScript/Node.js:</h4>
+                <pre className="bg-gray-100 rounded p-3 text-sm text-black overflow-x-auto">
 {`const response = await fetch('/api/convert', {
   method: 'POST',
   headers: {
@@ -225,8 +225,8 @@ console.log(result.data);`}
               </div>
 
               <div>
-                <h4 className="text-white font-medium mb-2">Python:</h4>
-                <pre className="bg-black/30 rounded p-3 text-sm text-gray-300 overflow-x-auto">
+                <h4 className="text-black font-medium mb-2">Python:</h4>
+                <pre className="bg-gray-100 rounded p-3 text-sm text-black overflow-x-auto">
 {`import requests
 
 response = requests.post('/api/convert', 
@@ -243,8 +243,8 @@ print(result['data'])`}
               </div>
 
               <div>
-                <h4 className="text-white font-medium mb-2">cURL:</h4>
-                <pre className="bg-black/30 rounded p-3 text-sm text-gray-300 overflow-x-auto">
+                <h4 className="text-black font-medium mb-2">cURL:</h4>
+                <pre className="bg-gray-100 rounded p-3 text-sm text-black overflow-x-auto">
 {`curl -X POST /api/convert \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\

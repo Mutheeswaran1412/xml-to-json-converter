@@ -215,10 +215,10 @@ export function BulkConverter() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
-        <div className="bg-black/20 px-6 py-4 border-b border-white/10">
-          <h2 className="text-white font-semibold text-lg">Bulk File Converter</h2>
-          <p className="text-gray-400 text-sm mt-1">Convert multiple XML files at once{!user && ' (Sign in to save history)'}</p>
+      <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
+          <h2 className="text-black font-semibold text-lg">Bulk File Converter</h2>
+          <p className="text-gray-600 text-sm mt-1">Convert multiple XML files at once{!user && ' (Sign in to save history)'}</p>
         </div>
 
         <div className="p-6">
@@ -228,16 +228,16 @@ export function BulkConverter() {
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
               isDragging
-                ? 'border-purple-500 bg-purple-500/10'
-                : 'border-white/20 hover:border-white/30'
+                ? 'border-purple-500 bg-purple-50'
+                : 'border-gray-300 hover:border-gray-400'
             }`}
           >
-            <Upload className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-            <p className="text-white font-medium mb-2">
+            <Upload className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-black font-medium mb-2">
               Drag and drop XML files here
             </p>
-            <p className="text-gray-400 text-sm mb-2">Maximum 2MB per file</p>
-            <p className="text-gray-400 text-sm mb-4">or</p>
+            <p className="text-gray-600 text-sm mb-2">Maximum 2MB per file</p>
+            <p className="text-gray-600 text-sm mb-4">or</p>
             <label className="cursor-pointer">
               <input
                 type="file"
@@ -256,16 +256,16 @@ export function BulkConverter() {
             <>
               <div className="mt-6 flex items-center justify-between">
                 <div className="flex items-center gap-4 text-sm">
-                  <span className="text-gray-400">
-                    Total: <strong className="text-white">{conversions.length}</strong>
+                  <span className="text-black">
+                    Total: <strong className="text-black">{conversions.length}</strong>
                   </span>
                   {successCount > 0 && (
-                    <span className="text-green-400">
+                    <span className="text-green-600">
                       Success: <strong>{successCount}</strong>
                     </span>
                   )}
                   {errorCount > 0 && (
-                    <span className="text-red-400">
+                    <span className="text-red-600">
                       Failed: <strong>{errorCount}</strong>
                     </span>
                   )}
@@ -290,14 +290,14 @@ export function BulkConverter() {
                   
                   {isProcessing && (
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-blue-400" />
-                      <div className="w-32 bg-gray-700 rounded-full h-2">
+                      <BarChart3 className="w-4 h-4 text-blue-600" />
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${overallProgress}%` }}
                         />
                       </div>
-                      <span className="text-sm text-gray-400">{Math.round(overallProgress)}%</span>
+                      <span className="text-sm text-black">{Math.round(overallProgress)}%</span>
                     </div>
                   )}
                   {successCount > 0 && (
@@ -311,7 +311,7 @@ export function BulkConverter() {
                   )}
                   <button
                     onClick={clearAll}
-                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition-colors"
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-black font-medium rounded-lg transition-colors"
                   >
                     Clear
                   </button>
@@ -322,15 +322,15 @@ export function BulkConverter() {
                 {conversions.map((conversion) => (
                   <div
                     key={conversion.id}
-                    className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
+                    className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <FileCode2 className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                      <FileCode2 className="w-5 h-5 text-gray-600 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium truncate">
+                        <p className="text-black font-medium truncate">
                           {conversion.file.name}
                         </p>
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
                           <span>{(conversion.file.size / 1024).toFixed(1)} KB</span>
                           {conversion.fileType && (
                             <span className="px-1 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded">
@@ -343,24 +343,24 @@ export function BulkConverter() {
                         </div>
                         {conversion.status === 'converting' && conversion.progress !== undefined && (
                           <div className="mt-2">
-                            <div className="w-full bg-gray-700 rounded-full h-1.5">
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
                               <div 
                                 className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
                                 style={{ width: `${conversion.progress}%` }}
                               />
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">{conversion.progress}% complete</p>
+                            <p className="text-xs text-gray-600 mt-1">{conversion.progress}% complete</p>
                           </div>
                         )}
                         {conversion.error && (
-                          <p className="text-red-400 text-sm mt-1">{conversion.error}</p>
+                          <p className="text-red-600 text-sm mt-1">{conversion.error}</p>
                         )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {conversion.status === 'pending' && (
-                        <span className="text-gray-400 text-sm">Pending</span>
+                        <span className="text-gray-600 text-sm">Pending</span>
                       )}
                       {conversion.status === 'converting' && (
                         <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
@@ -375,7 +375,7 @@ export function BulkConverter() {
                         type="button"
                         onClick={() => removeFile(conversion.id)}
                         title="Remove file"
-                        className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                        className="p-1 text-gray-600 hover:text-red-600 transition-colors"
                       >
                         <X className="w-5 h-5" />
                       </button>

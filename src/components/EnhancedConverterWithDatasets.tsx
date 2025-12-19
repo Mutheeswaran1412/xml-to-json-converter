@@ -5,6 +5,8 @@ import { DatasetManager, Dataset } from './DatasetManager';
 import { ValidationSummary } from './ValidationSummary';
 import { DatasetUploader } from './DatasetUploader';
 import { convertXmlToJson, detectFileType } from '../utils/xmlToJsonConverter';
+import { fixFormulaField, fixSummarizeFields } from '../utils/fixedConverter';
+import { fixSummarizeToolFieldDropping } from '../utils/summarizeFix';
 import { makeCloudCompatible } from '../utils/cloudCompatible';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -229,6 +231,11 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
         result = enhanceJsonWithDatasets(result);
       }
       
+      // Apply fixes before cloud compatibility
+      const parsedForFix = JSON.parse(result);
+      applyConverterFixes(parsedForFix);
+      result = JSON.stringify(parsedForFix, null, 2);
+      
       // FORCE cloud compatibility conversion with dataset info
       console.log('Before cloud conversion:', result.substring(0, 200));
       result = makeCloudCompatible(result, datasets);
@@ -322,6 +329,48 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
     }
   };
 
+  const applyConverterFixes = (parsedJson: any) => {
+    const content = parsedJson.content || parsedJson;
+    if (!content.Nodes?.Node) return;
+    
+    const nodes = Array.isArray(content.Nodes.Node) ? content.Nodes.Node : [content.Nodes.Node];
+    
+    nodes.forEach((node: any) => {
+      const plugin = node.GuiSettings?.['@Plugin'] || '';
+      
+      // Fix Formula tools
+      if (plugin.includes('Formula') && !plugin.includes('MultiRow') && !plugin.includes('MultiField')) {
+        const config = node.Properties?.Configuration;
+        if (config?.FormulaFields?.FormulaField) {
+          const formulaFields = Array.isArray(config.FormulaFields.FormulaField)
+            ? config.FormulaFields.FormulaField
+            : [config.FormulaFields.FormulaField];
+          
+          formulaFields.forEach((ff: any) => {
+            fixFormulaField(ff);
+          });
+        }
+      }
+      
+      // Fix Summarize tools - prevent field dropping
+      if (plugin.includes('Summarize')) {
+        // Get upstream fields (all possible fields that could be present)
+        const upstreamFields = [
+          { '@name': 'empid', '@type': 'Int32', '@size': '4' },
+          { '@name': 'empname', '@type': 'V_String', '@size': '254' },
+          { '@name': 'salary', '@type': 'Double', '@size': '8' },
+          { '@name': 'active', '@type': 'V_String', '@size': '254' },
+          { '@name': 'SalaryTag', '@type': 'V_String', '@size': '10' },
+          { '@name': 'comm', '@type': 'V_String', '@size': '254' },
+          { '@name': 'join-date', '@type': 'V_String', '@size': '254' },
+          { '@name': 'Bonus', '@type': 'V_String', '@size': '254' }
+        ];
+        
+        fixSummarizeToolFieldDropping(node, upstreamFields);
+      }
+    });
+  };
+
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(jsonOutput);
     setSuccess('Copied to clipboard!');
@@ -359,13 +408,13 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
   return (
     <div className="space-y-8">
       {/* Token Status */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-300">API Token Status:</span>
+            <span className="text-sm text-black">API Token Status:</span>
             <span className={`text-sm font-medium ${
-              tokenStatus === 'valid' ? 'text-green-400' : 
-              tokenStatus === 'expired' ? 'text-yellow-400' : 'text-red-400'
+              tokenStatus === 'valid' ? 'text-green-600' : 
+              tokenStatus === 'expired' ? 'text-yellow-600' : 'text-red-600'
             }`}>
               {tokenStatus === 'valid' ? '✓ Valid' : 
                tokenStatus === 'expired' ? '⚠ Expired' : '✗ Not Configured'}
@@ -373,7 +422,7 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
           </div>
           <button
             onClick={checkTokenStatus}
-            className="text-xs text-blue-400 hover:text-blue-300"
+            className="text-xs text-blue-600 hover:text-blue-800"
           >
             Refresh Status
           </button>
@@ -381,13 +430,13 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
       </div>
 
       {/* Workflow Configuration */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Workflow className="w-5 h-5 text-purple-400" />
-          <h3 className="text-xl font-semibold text-white">Workflow Configuration</h3>
+          <Workflow className="w-5 h-5 text-purple-600" />
+          <h3 className="text-xl font-semibold text-black">Workflow Configuration</h3>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-black mb-2">
             Workflow Name *
           </label>
           <input
@@ -395,17 +444,17 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
             placeholder="Enter workflow name"
-            className="w-full bg-gray-900/50 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+            className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-black focus:outline-none focus:border-blue-500"
           />
         </div>
       </div>
 
       {/* Uploaded Files Section */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-blue-400" />
-            <h3 className="text-xl font-semibold text-white">Select from Uploaded Files</h3>
+            <Database className="w-5 h-5 text-blue-600" />
+            <h3 className="text-xl font-semibold text-black">Select from Uploaded Files</h3>
           </div>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -417,8 +466,8 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
         </div>
         {uploadedFiles.length === 0 ? (
           <div className="text-center py-8">
-            <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-400">No uploaded files found. Upload files in Data Storage first.</p>
+            <FolderOpen className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-black">No uploaded files found. Upload files in Data Storage first.</p>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm mx-auto"
@@ -434,13 +483,13 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
               const isSelected = selectedFile?._id === file._id;
               
               return (
-                <div key={file._id || file.id || index} className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                <div key={file._id || file.id || index} className="p-4 bg-white border border-gray-200 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
-                      <FileText className="w-5 h-5 text-blue-400" />
+                      <FileText className="w-5 h-5 text-blue-600" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-white font-medium">{file.filename}</h4>
+                          <h4 className="text-black font-medium">{file.filename}</h4>
                           {isConverted && (
                             <span className="px-2 py-1 bg-green-500/20 border border-green-500/50 text-green-300 text-xs rounded">
                               ✓ Converted
@@ -452,7 +501,7 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-400 mt-1">
+                        <div className="text-sm text-gray-600 mt-1">
                           {(file.file_size / 1024).toFixed(1)} KB • {new Date(file.created_at).toLocaleDateString()}
                         </div>
                       </div>
@@ -469,10 +518,10 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
                             selectFileFromStorage(file);
                           }
                         }}
-                        className={`px-3 py-1 text-xs rounded ${
+                        className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
                           isSelected 
-                            ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500 shadow-md' 
+                            : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm'
                         }`}
                       >
                         {isSelected ? 'Deselect' : 'Select'}
@@ -519,9 +568,9 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
       />
 
       {/* XML Input Section */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">XML Input</h3>
+          <h3 className="text-xl font-semibold text-black">XML Input</h3>
           {fileType && (
             <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/50 text-blue-300 text-sm rounded">
               {fileType === 'xml' ? 'XML File' : fileType === 'json' ? 'JSON File' : 'Unknown Format'}
@@ -533,12 +582,12 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
           <textarea
             value={xmlInput}
             onChange={(e) => setXmlInput(e.target.value)}
-            className="w-full h-64 bg-gray-900/50 border border-white/20 rounded-lg p-4 text-white font-mono text-sm resize-none focus:outline-none focus:border-blue-500"
+            className="w-full h-64 bg-white border border-gray-300 rounded-lg p-4 text-black font-mono text-sm resize-none focus:outline-none focus:border-blue-500"
             placeholder="Paste your XML content here..."
           />
 
           <div className="space-y-2">
-            <div className="text-xs text-gray-400">Maximum file size: 10MB (2MB recommended for optimal performance)</div>
+            <div className="text-xs text-black">Maximum file size: 10MB (2MB recommended for optimal performance)</div>
             <div className="flex gap-3">
               <input
                 ref={fileInputRef}
@@ -592,15 +641,15 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
       </div>
 
       {/* JSON Output Section */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Enhanced JSON Output</h3>
+          <h3 className="text-xl font-semibold text-black">Enhanced JSON Output</h3>
           <div className="flex items-center gap-3">
             {jsonOutput && (
               <button
                 onClick={() => setShowTreeView(!showTreeView)}
                 className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm ${
-                  showTreeView ? 'bg-green-600 text-white' : 'bg-gray-600 hover:bg-gray-700 text-gray-300'
+                  showTreeView ? 'bg-green-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-black'
                 }`}
               >
                 <TreePine className="w-4 h-4" />
@@ -618,14 +667,14 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
 
         <div className="space-y-4">
           {showTreeView && parsedJson ? (
-            <div className="w-full h-64 bg-gray-900/50 border border-white/20 rounded-lg p-4 overflow-auto">
+            <div className="w-full h-64 bg-white border border-gray-300 rounded-lg p-4 overflow-auto">
               <JsonViewer data={parsedJson} />
             </div>
           ) : (
             <textarea
               value={jsonOutput}
               readOnly
-              className="w-full h-64 bg-gray-900/50 border border-white/20 rounded-lg p-4 text-white font-mono text-sm resize-none"
+              className="w-full h-64 bg-white border border-gray-300 rounded-lg p-4 text-black font-mono text-sm resize-none"
               placeholder="Enhanced JSON output with workflow and dataset information will appear here..."
             />
           )}
@@ -638,9 +687,9 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
                   value={customFilename}
                   onChange={(e) => setCustomFilename(e.target.value)}
                   placeholder="Enter filename (without .json)"
-                  className="flex-1 bg-gray-900/50 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-black text-sm focus:outline-none focus:border-blue-500"
                 />
-                <span className="text-gray-400 text-sm">.json</span>
+                <span className="text-black text-sm">.json</span>
               </div>
               <div className="flex gap-2 flex-wrap">
                 <button
@@ -657,25 +706,25 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
       </div>
 
       {/* Saved Workflows */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Workflow className="w-5 h-5 text-purple-400" />
-          <h3 className="text-xl font-semibold text-white">Saved Workflows</h3>
-          <span className="text-sm text-gray-400">({savedWorkflows.length})</span>
+          <Workflow className="w-5 h-5 text-purple-600" />
+          <h3 className="text-xl font-semibold text-black">Saved Workflows</h3>
+          <span className="text-sm text-black">({savedWorkflows.length})</span>
         </div>
         {savedWorkflows.length === 0 ? (
           <div className="text-center py-8">
-            <Workflow className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-400">No saved workflows yet. Convert a file to create your first workflow.</p>
+            <Workflow className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-black">No saved workflows yet. Convert a file to create your first workflow.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {savedWorkflows.map((workflow, index) => (
-              <div key={workflow.id || index} className="p-4 bg-white/5 border border-white/10 rounded-lg">
+              <div key={workflow.id || index} className="p-4 bg-white border border-gray-200 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-white font-medium">{workflow.name}</h4>
+                  <h4 className="text-black font-medium">{workflow.name}</h4>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">{new Date(workflow.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-gray-600">{new Date(workflow.createdAt).toLocaleDateString()}</span>
                     <button
                       onClick={() => {
                         const workflows = JSON.parse(localStorage.getItem('saved_workflows') || '[]');
@@ -683,16 +732,16 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
                         localStorage.setItem('saved_workflows', JSON.stringify(filtered));
                         loadSavedWorkflows();
                       }}
-                      className="text-red-400 hover:text-red-300 text-xs"
+                      className="text-red-600 hover:text-red-800 text-xs"
                     >
                       Delete
                     </button>
                   </div>
                 </div>
-                <div className="text-sm text-gray-400 mb-2">
+                <div className="text-sm text-black mb-2">
                   File: {workflow.filename} • Datasets: {workflow.datasets.length}
                 </div>
-                <div className="text-xs text-blue-400">
+                <div className="text-xs text-blue-600">
                   Output Path: {workflow.outputPath}
                 </div>
               </div>
@@ -703,7 +752,7 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
 
       {/* Status Messages */}
       {error && (
-        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5" />
             <span>{error}</span>
@@ -711,7 +760,7 @@ export function EnhancedConverterWithDatasets({ onConvert }: EnhancedConverterWi
         </div>
       )}
       {success && (
-        <div className="p-4 bg-green-500/20 border border-green-500/50 rounded-lg text-green-300">
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5" />
             <span>{success}</span>

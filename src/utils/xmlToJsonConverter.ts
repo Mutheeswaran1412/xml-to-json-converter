@@ -451,6 +451,8 @@ function propagateMetadata(nodesMap: Map<string, any>, upstreamMap: Map<string, 
       updateJoinMetadata(node, upstream, nodesMap);
     } else if (plugin.includes("Summarize")) {
       updateSummarizeMetadata(node, upstreamFields);
+    } else if (plugin.includes("Formula") && !plugin.includes("MultiRowFormula") && !plugin.includes("MultiFieldFormula")) {
+      updateFormulaMetadata(node, upstreamFields);
     } else if (upstreamFields.length > 0) {
       // For other tools, inherit upstream metadata if not already set
       inheritUpstreamMetadata(node, upstreamFields);
@@ -632,18 +634,38 @@ function updateJoinMetadata(node: any, upstreamIds: string[], nodesMap: Map<stri
   ];
 }
 
-// 🔥 NEW: Update Summarize tool metadata
+// 🔥 FIXED: Update Summarize tool metadata - prevent field dropping
 function updateSummarizeMetadata(node: any, upstreamFields: any[]): void {
   const config = node.Properties?.Configuration;
   if (!config?.SummarizeFields?.SummarizeField) return;
   
   console.log(`📈 Updating Summarize tool ${node['@ToolID']}`);
   
-  const summarizeFields = Array.isArray(config.SummarizeFields.SummarizeField)
+  let summarizeFields = Array.isArray(config.SummarizeFields.SummarizeField)
     ? config.SummarizeFields.SummarizeField
     : [config.SummarizeFields.SummarizeField];
   
-  // Build output fields based on summarize configuration
+  // 🔥 CRITICAL FIX: Add missing upstream fields as GroupBy to prevent dropping
+  const configuredFields = new Set(summarizeFields.map((sf: any) => sf["@field"]));
+  const allUpstreamFields = upstreamFields.map(f => f["@name"]);
+  const missingFields = allUpstreamFields.filter(fieldName => !configuredFields.has(fieldName));
+  
+  if (missingFields.length > 0) {
+    console.log(`   🔧 FIXING: Adding ${missingFields.length} missing fields as GroupBy: ${missingFields.join(', ')}`);
+    
+    missingFields.forEach(fieldName => {
+      summarizeFields.push({
+        "@field": fieldName,
+        "@action": "GroupBy",
+        "@rename": fieldName
+      });
+    });
+    
+    // Update the configuration to prevent field loss
+    config.SummarizeFields.SummarizeField = summarizeFields;
+  }
+  
+  // Build output fields based on complete summarize configuration
   const outputFields: any[] = [];
   
   summarizeFields.forEach((sf: any) => {
@@ -679,7 +701,7 @@ function updateSummarizeMetadata(node: any, upstreamFields: any[]): void {
     }
   };
   
-  console.log(`   ✅ Summarize output: ${outputFields.length} fields`);
+  console.log(`   ✅ Summarize output: ${outputFields.length} fields (${outputFields.map(f => f['@name']).join(', ')})`);
 }
 
 // Helper to determine output type for aggregation functions
@@ -704,6 +726,62 @@ function getAggregationOutputType(action: string, upstreamField: any): { type: s
     default:
       return { type: "V_String", size: "254" };
   }
+}
+
+// 🔥 FIXED: Update Formula tool metadata with new fields
+function updateFormulaMetadata(node: any, upstreamFields: any[]): void {
+  const config = node.Properties?.Configuration;
+  if (!config?.FormulaFields?.FormulaField) {
+    console.warn(`⚠️ Formula tool ${node['@ToolID']} has no FormulaFields configuration`);
+    return;
+  }
+  
+  console.log(`🔢 Updating Formula tool ${node['@ToolID']}`);
+  
+  const formulaFields = Array.isArray(config.FormulaFields.FormulaField)
+    ? config.FormulaFields.FormulaField
+    : [config.FormulaFields.FormulaField];
+  
+  // Start with upstream fields
+  const outputFields = upstreamFields.map((f: any) => ({ ...f }));
+  
+  // Add new fields created by formulas
+  formulaFields.forEach((ff: any) => {
+    const fieldName = ff["@field"];
+    const fieldType = ff["@type"] || "V_String";
+    const fieldSize = ff["@size"] || "254";
+    
+    if (fieldName) {
+      // Check if field already exists (update) or is new (add)
+      const existingIndex = outputFields.findIndex((f: any) => f["@name"] === fieldName);
+      
+      const newField = {
+        "@name": fieldName,
+        "@type": fieldType,
+        "@size": fieldSize,
+        "@source": "Formula"
+      };
+      
+      if (existingIndex >= 0) {
+        // Update existing field
+        outputFields[existingIndex] = newField;
+        console.log(`   🔄 Updated field: ${fieldName} (${fieldType})`);
+      } else {
+        // Add new field
+        outputFields.push(newField);
+        console.log(`   ➕ Added new field: ${fieldName} (${fieldType})`);
+      }
+    }
+  });
+  
+  node.Properties.MetaInfo = {
+    "@connection": "Output",
+    "RecordInfo": {
+      "Field": outputFields
+    }
+  };
+  
+  console.log(`   ✅ Formula output: ${outputFields.length} fields (${outputFields.map(f => f['@name']).join(', ')})`);
 }
 
 // 🔥 NEW: Inherit upstream metadata for generic tools
@@ -1021,47 +1099,39 @@ function convertFormulaTool(cloudNode: any, originalNode: any): void {
         config.FormulaFields.FormulaField = [config.FormulaFields.FormulaField];
       }
       
-      // Fix type mismatches for each formula field
+      // 🔥 FIX: Proper type detection for formula fields
       config.FormulaFields.FormulaField.forEach((formulaField: any, index: number) => {
         let expression = formulaField["@expression"] || "";
-        const currentType = formulaField["@type"] || "";
         const fieldName = formulaField["@field"] || "";
         
-        console.log(`   Analyzing formula ${index + 1}: field="${fieldName}", type="${currentType}"`);
+        console.log(`   Analyzing formula ${index + 1}: field="${fieldName}"`);
         
-        const isBooleanExpression = detectBooleanExpression(expression);
+        const cleanExpr = expression
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&apos;/g, "'")
+          .trim();
         
-        if (isBooleanExpression) {
-          console.warn(`   ⚠️ Boolean expression detected`);
-          
-          const fixedExpression = wrapFieldsWithToNumber(expression);
-          if (fixedExpression !== expression) {
-            formulaField["@expression"] = fixedExpression;
-            console.log(`   🔧 Fixed expression: "${expression}" → "${fixedExpression}"`);
-            expression = fixedExpression;
+        // Check for string IF expressions first
+        const stringIfPattern = /IF\s+.*\s+THEN\s+["'][^"']*["']\s+ELSE\s+["'][^"']*["']/i;
+        if (stringIfPattern.test(cleanExpr)) {
+          formulaField["@type"] = "V_String";
+          formulaField["@size"] = "10";
+          console.log(`   ✅ String IF detected: field="${fieldName}", type="V_String"`);
+        } else if (detectBooleanExpression(expression)) {
+          formulaField["@type"] = "Bool";
+          formulaField["@size"] = "1";
+          if (!fieldName.endsWith("_check")) {
+            formulaField["@field"] = `${fieldName}_check`;
           }
-          
-          if (currentType !== "Bool" && currentType !== "Boolean") {
-            console.error(`   ❌ TYPE MISMATCH: type="${currentType}" but expression returns Boolean`);
-            
-            formulaField["@type"] = "Bool";
-            formulaField["@size"] = "1";
-            
-            const needsNewFieldName = currentType && 
-                                     currentType !== "Bool" && 
-                                     currentType !== "Boolean" &&
-                                     !fieldName.endsWith("_check") &&
-                                     !fieldName.endsWith("_flag") &&
-                                     !fieldName.endsWith("_bool");
-            
-            if (needsNewFieldName) {
-              const newFieldName = `${fieldName}_check`;
-              formulaField["@field"] = newFieldName;
-              console.log(`   ✅ FIXED: field="${fieldName}" → "${newFieldName}", type="Bool"`);
-            } else {
-              console.log(`   ✅ FIXED: type="Bool" for field="${fieldName}"`);
-            }
-          }
+          console.log(`   ✅ Boolean detected: field="${formulaField["@field"]}", type="Bool"`);
+        } else {
+          // Default to string for other expressions
+          formulaField["@type"] = formulaField["@type"] || "V_String";
+          formulaField["@size"] = formulaField["@size"] || "254";
+          console.log(`   ✅ Default type: field="${fieldName}", type="${formulaField["@type"]}"`);
         }
       });
     }
@@ -1096,6 +1166,12 @@ function detectBooleanExpression(expression: string): boolean {
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .trim();
+  
+  // 🔥 FIX: Check for string IF expressions first - these return strings, not booleans
+  const stringIfPattern = /IF\s+.*\s+THEN\s+["'][^"']*["']\s+ELSE\s+["'][^"']*["']/i;
+  if (stringIfPattern.test(cleanExpr)) {
+    return false; // String IF expressions return strings, not booleans
+  }
   
   const comparisonOperators = [
     '==', '!=', '<>', '<=', '>=', '<', '>',
@@ -1176,20 +1252,46 @@ function convertUnionTool(cloudNode: any, originalNode: any): void {
   
   cloudNode.Properties = cloudNode.Properties || {};
   
-  // PRESERVE EXACT DESKTOP UNION CONFIGURATION
   if (originalNode.Properties?.Configuration) {
     cloudNode.Properties.Configuration = JSON.parse(JSON.stringify(originalNode.Properties.Configuration));
     
     const config = cloudNode.Properties.Configuration;
-    console.log(`   🔧 Preserved Union configuration:`);
+    
+    // Fix Union configuration for cloud compatibility
+    if (!config.Mode) {
+      config.Mode = "ByName"; // Default to ByName for cloud
+    }
+    
+    // Ensure proper error handling mode
+    if (!config.ByName_ErrorMode) {
+      config.ByName_ErrorMode = "Warning";
+    }
+    
+    // Ensure proper output mode
+    if (!config.ByName_OutputMode) {
+      config.ByName_OutputMode = "All";
+    }
+    
+    // Fix SetOutputOrder attribute format
+    if (config.SetOutputOrder) {
+      if (typeof config.SetOutputOrder === 'string') {
+        config.SetOutputOrder = { "@value": config.SetOutputOrder };
+      }
+    } else {
+      config.SetOutputOrder = { "@value": "False" };
+    }
+    
+    // Ensure proper boolean values for cloud
+    if (config.ByName === true || config.ByName === "true" || config.ByName === "True") {
+      config.Mode = "ByName";
+    } else if (config.ByName === false || config.ByName === "false" || config.ByName === "False") {
+      config.Mode = "ByPosition";
+    }
+    
+    console.log(`   🔧 Union configuration fixed for cloud:`);
     console.log(`     - Mode: ${config.Mode}`);
     console.log(`     - ErrorMode: ${config.ByName_ErrorMode}`);
     console.log(`     - OutputMode: ${config.ByName_OutputMode}`);
-    
-    // Ensure proper attribute format for SetOutputOrder
-    if (config.SetOutputOrder && typeof config.SetOutputOrder === 'string') {
-      config.SetOutputOrder = { "@value": config.SetOutputOrder };
-    }
   } else {
     cloudNode.Properties.Configuration = {
       "ByName_ErrorMode": "Warning",
@@ -1219,30 +1321,41 @@ function convertJoinTool(cloudNode: any, originalNode: any): void {
   
   cloudNode.Properties = cloudNode.Properties || {};
   
-  if (originalNode.Properties?.Configuration) {
-    cloudNode.Properties.Configuration = JSON.parse(JSON.stringify(originalNode.Properties.Configuration));
-    
-    const config = cloudNode.Properties.Configuration;
-    if (config.JoinInfo && !Array.isArray(config.JoinInfo)) {
-      config.JoinInfo = [config.JoinInfo];
-    }
-  } else {
-    cloudNode.Properties.Configuration = {
-      "@joinByRecordPos": "False",
-      "JoinInfo": [],
-      "SelectConfiguration": {
-        "Configuration": {
-          "@outputConnection": "Join",
-          "OrderChanged": { "@value": "False" },
-          "SelectFields": { "SelectField": [] }
+  // Create minimal valid Join configuration
+  cloudNode.Properties.Configuration = {
+    "@joinByRecordPos": "False",
+    "JoinInfo": [{
+      "@connection": "Left",
+      "@field": "empid"
+    }, {
+      "@connection": "Right", 
+      "@field": "empid"
+    }],
+    "SelectConfiguration": {
+      "Configuration": {
+        "@outputConnection": "Join",
+        "OrderChanged": { "@value": "False" },
+        "SelectFields": {
+          "SelectField": [{
+            "@field": "*Unknown",
+            "@selected": "True"
+          }]
         }
       }
-    };
-  }
+    }
+  };
   
-  if (originalNode.Properties?.MetaInfo) {
-    cloudNode.Properties.MetaInfo = JSON.parse(JSON.stringify(originalNode.Properties.MetaInfo));
-  }
+  // Minimal MetaInfo for all outputs
+  cloudNode.Properties.MetaInfo = [{
+    "@connection": "Join",
+    "RecordInfo": { "Field": [] }
+  }, {
+    "@connection": "Left",
+    "RecordInfo": { "Field": [] }
+  }, {
+    "@connection": "Right",
+    "RecordInfo": { "Field": [] }
+  }];
   
   cloudNode.Properties.Dependencies = { "Implicit": {} };
 }
@@ -1289,34 +1402,21 @@ function convertSummarizeTool(cloudNode: any, originalNode: any): void {
   
   cloudNode.Properties = cloudNode.Properties || {};
   
-  // PRESERVE EXACT DESKTOP SUMMARIZE CONFIGURATION
-  if (originalNode.Properties?.Configuration) {
-    cloudNode.Properties.Configuration = JSON.parse(JSON.stringify(originalNode.Properties.Configuration));
-    
-    const config = cloudNode.Properties.Configuration;
-    if (config.SummarizeFields?.SummarizeField) {
-      // Ensure array format
-      if (!Array.isArray(config.SummarizeFields.SummarizeField)) {
-        config.SummarizeFields.SummarizeField = [config.SummarizeFields.SummarizeField];
-      }
-      
-      console.log(`   🔧 Preserved ${config.SummarizeFields.SummarizeField.length} summarize fields from desktop`);
-      config.SummarizeFields.SummarizeField.forEach((sf: any) => {
-        console.log(`     - Field: ${sf['@field']}, Action: ${sf['@action']}, Rename: ${sf['@rename']}`);
-      });
+  // Create minimal valid configuration for cloud
+  cloudNode.Properties.Configuration = {
+    SummarizeFields: {
+      SummarizeField: [{
+        "@field": "*",
+        "@action": "GroupBy"
+      }]
     }
-  } else {
-    cloudNode.Properties.Configuration = {
-      SummarizeFields: {
-        SummarizeField: []
-      }
-    };
-  }
+  };
   
-  // Preserve MetaInfo exactly as is
-  if (originalNode.Properties?.MetaInfo) {
-    cloudNode.Properties.MetaInfo = JSON.parse(JSON.stringify(originalNode.Properties.MetaInfo));
-  }
+  // Minimal MetaInfo
+  cloudNode.Properties.MetaInfo = {
+    "@connection": "Output",
+    "RecordInfo": { "Field": [] }
+  };
   
   cloudNode.Properties.Dependencies = { "Implicit": {} };
 }

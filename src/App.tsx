@@ -26,13 +26,7 @@ type ViewMode = 'converter' | 'enhanced' | 'tokens' | 'history' | 'bulk' | 'api'
 function App() {
   const { user, signOut } = useAuth();
   const [activeView, setActiveView] = useState<ViewMode>('converter');
-  const [xmlInput, setXmlInput] = useState('');
-  const [jsonOutput, setJsonOutput] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [isConverting, setIsConverting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [fileType, setFileType] = useState<'yxmd' | 'generic' | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -43,10 +37,7 @@ function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
         switch (e.key) {
-          case 'Enter':
-            e.preventDefault();
-            if (xmlInput.trim()) handleConvert();
-            break;
+
           case ',':
             e.preventDefault();
             setShowSettings(true);
@@ -61,7 +52,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [xmlInput]);
+  }, []);
 
   const handleConversionComplete = async (xmlInput: string, result: string, conversionTime: number, fileType: string, filename?: string) => {
     if (user) {
@@ -112,35 +103,23 @@ function App() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        setXmlInput(content);
-      };
-      reader.readAsText(file);
-    }
-  };
-
   const handleSignOut = async () => {
     await signOut();
     setActiveView('converter');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-green-700 to-blue-900">
-      <nav className="border-b border-white/10 bg-gradient-to-r from-blue-900/80 via-purple-900/80 to-blue-900/80 backdrop-blur-sm relative z-50">
+    <div className="min-h-screen bg-white">
+      <nav className="border-b border-gray-200 bg-white shadow-sm relative z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20 py-4">
             <div className="flex items-center gap-3">
-              <img src="./images/trinity-logo.webp" alt="Trinity Logo" className="w-40 h-16" />
+              <img src="./images/trinity-logo.webp" alt="Trinity Logo" className="w-48 h-14" />
             </div>
 
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden text-white p-2"
+              className="lg:hidden text-gray-700 p-2"
               title="Toggle mobile menu"
             >
               {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -150,7 +129,7 @@ function App() {
               <button
                 onClick={() => setActiveView('converter')}
                 className={`text-sm font-medium transition-colors ${
-                  activeView === 'converter' ? 'text-white' : 'text-gray-400 hover:text-white'
+                  activeView === 'converter' ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Simple
@@ -158,7 +137,7 @@ function App() {
               <button
                 onClick={() => setActiveView('enhanced')}
                 className={`text-sm font-medium transition-colors ${
-                  activeView === 'enhanced' ? 'text-white' : 'text-gray-400 hover:text-white'
+                  activeView === 'enhanced' ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Enhanced
@@ -167,7 +146,7 @@ function App() {
               <button
                 onClick={() => setActiveView('tokens')}
                 className={`text-sm font-medium transition-colors ${
-                  activeView === 'tokens' ? 'text-white' : 'text-gray-400 hover:text-white'
+                  activeView === 'tokens' ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Tokens
@@ -175,7 +154,7 @@ function App() {
               <button
                 onClick={() => setActiveView('bulk')}
                 className={`text-sm font-medium transition-colors ${
-                  activeView === 'bulk' ? 'text-white' : 'text-gray-400 hover:text-white'
+                  activeView === 'bulk' ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Bulk Convert
@@ -183,7 +162,7 @@ function App() {
               <button
                 onClick={() => setActiveView('history')}
                 className={`text-sm font-medium transition-colors ${
-                  activeView === 'history' ? 'text-white' : 'text-gray-400 hover:text-white'
+                  activeView === 'history' ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 History
@@ -191,7 +170,7 @@ function App() {
               <button
                 onClick={() => setActiveView('api')}
                 className={`text-sm font-medium transition-colors ${
-                  activeView === 'api' ? 'text-white' : 'text-gray-400 hover:text-white'
+                  activeView === 'api' ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 API
@@ -200,45 +179,45 @@ function App() {
               <div className="relative">
                 <button 
                   onClick={() => setShowMoreMenu(!showMoreMenu)}
-                  className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   More
                 </button>
                 {showMoreMenu && (
-                  <div className="absolute right-0 top-full mt-2 bg-slate-800 border border-white/10 rounded-lg shadow-xl z-[9999] min-w-48 max-w-xs">
+                  <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] min-w-48 max-w-xs">
                   <button
                     onClick={() => { setActiveView('storage'); setShowMoreMenu(false); }}
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-t-lg"
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-t-lg"
                   >
                     Data Storage
                   </button>
                   <button
                     onClick={() => { setActiveView('cloud'); setShowMoreMenu(false); }}
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-white/10"
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50"
                   >
                     Cloud Storage
                   </button>
                   <button
                     onClick={() => { setActiveView('database'); setShowMoreMenu(false); }}
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-white/10"
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50"
                   >
                     Database Export
                   </button>
                   <button
                     onClick={() => { setActiveView('integrations'); setShowMoreMenu(false); }}
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-white/10"
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50"
                   >
                     Integrations
                   </button>
                   <button
                     onClick={() => { setActiveView('knowledge'); setShowMoreMenu(false); }}
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-white/10"
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50"
                   >
                     Knowledge Base
                   </button>
                   <button
                     onClick={() => { setActiveView('analytics'); setShowMoreMenu(false); }}
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-b-lg"
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-b-lg"
                   >
                     Analytics
                   </button>
@@ -248,13 +227,13 @@ function App() {
 
               {user ? (
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-lg border border-white/20">
-                    <User className="w-4 h-4 text-white" />
-                    <span className="text-sm text-white">{user.email}</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg border border-gray-200">
+                    <User className="w-4 h-4 text-gray-700" />
+                    <span className="text-sm text-gray-700">{user.email}</span>
                   </div>
                   <button
                     onClick={handleSignOut}
-                    className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                    className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     Sign out
                   </button>
@@ -263,13 +242,13 @@ function App() {
                 <>
                   <button
                     onClick={() => setShowAuthModal(true)}
-                    className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                    className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     Sign in
                   </button>
                   <button
                     onClick={() => setShowSettings(true)}
-                    className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                    className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                     title="Open settings"
                   >
                     <Settings className="w-4 h-4" />
@@ -290,7 +269,7 @@ function App() {
               <button
                 onClick={() => { setActiveView('converter'); setShowMobileMenu(false); }}
                 className={`block w-full text-left px-4 py-2 rounded-lg ${
-                  activeView === 'converter' ? 'bg-white/10 text-white' : 'text-gray-400'
+                  activeView === 'converter' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
                 }`}
               >
                 Simple Converter
@@ -298,7 +277,7 @@ function App() {
               <button
                 onClick={() => { setActiveView('enhanced'); setShowMobileMenu(false); }}
                 className={`block w-full text-left px-4 py-2 rounded-lg ${
-                  activeView === 'enhanced' ? 'bg-white/10 text-white' : 'text-gray-400'
+                  activeView === 'enhanced' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
                 }`}
               >
                 Enhanced Converter
@@ -306,7 +285,7 @@ function App() {
               <button
                 onClick={() => { setActiveView('tokens'); setShowMobileMenu(false); }}
                 className={`block w-full text-left px-4 py-2 rounded-lg ${
-                  activeView === 'tokens' ? 'bg-white/10 text-white' : 'text-gray-400'
+                  activeView === 'tokens' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
                 }`}
               >
                 Token Management
@@ -314,7 +293,7 @@ function App() {
               <button
                 onClick={() => { setActiveView('bulk'); setShowMobileMenu(false); }}
                 className={`block w-full text-left px-4 py-2 rounded-lg ${
-                  activeView === 'bulk' ? 'bg-white/10 text-white' : 'text-gray-400'
+                  activeView === 'bulk' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
                 }`}
               >
                 Bulk Convert
@@ -322,7 +301,7 @@ function App() {
               <button
                 onClick={() => { setActiveView('history'); setShowMobileMenu(false); }}
                 className={`block w-full text-left px-4 py-2 rounded-lg ${
-                  activeView === 'history' ? 'bg-white/10 text-white' : 'text-gray-400'
+                  activeView === 'history' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
                 }`}
               >
                 History
@@ -330,7 +309,7 @@ function App() {
               <button
                 onClick={() => { setActiveView('api'); setShowMobileMenu(false); }}
                 className={`block w-full text-left px-4 py-2 rounded-lg ${
-                  activeView === 'api' ? 'bg-white/10 text-white' : 'text-gray-400'
+                  activeView === 'api' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
                 }`}
               >
                 API
@@ -338,7 +317,7 @@ function App() {
               <button
                 onClick={() => { setActiveView('storage'); setShowMobileMenu(false); }}
                 className={`block w-full text-left px-4 py-2 rounded-lg ${
-                  activeView === 'storage' ? 'bg-white/10 text-white' : 'text-gray-400'
+                  activeView === 'storage' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
                 }`}
               >
                 Data Storage
@@ -360,39 +339,39 @@ function App() {
         {activeView === 'converter' && (
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-white mb-4">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
                 Simple XML to JSON Converter
               </h1>
-              <p className="text-gray-400 text-lg">
+              <p className="text-gray-600 text-lg">
                 Convert XML files to JSON format with specialized Alteryx workflow support.
               </p>
             </div>
             
             <SimpleConverter onConvert={handleConversionComplete} />
             
-            <footer className="mt-16 pt-8 border-t border-white/10 text-center">
-              <p className="text-gray-400 text-sm mb-2">
+            <footer className="mt-16 pt-8 border-t border-gray-200 text-center">
+              <p className="text-gray-600 text-sm mb-2">
                 Trinity Technology Solutions - XML to JSON Converter
               </p>
             </footer>
-          </div>
+          </div> 
         )}
 
         {activeView === 'enhanced' && (
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-white mb-4">
-                Designer Desktop to Designer Cloud Converter
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                Designer Desktop to alteryx one 
               </h1>
-              <p className="text-gray-400 text-lg">
+              <p className="text-gray-600 text-lg">
                 Advanced XML to JSON conversion with comprehensive workflow and dataset management capabilities.
               </p>
             </div>
             
             <EnhancedConverterWithDatasets onConvert={handleConversionComplete} />
             
-            <footer className="mt-16 pt-8 border-t border-white/10 text-center">
-              <p className="text-gray-400 text-sm mb-2">
+            <footer className="mt-16 pt-8 border-t border-gray-200 text-center">
+              <p className="text-gray-600 text-sm mb-2">
                 Trinity Technology Solutions - Enhanced XML to JSON Converter with Dataset Management
               </p>
             </footer>
