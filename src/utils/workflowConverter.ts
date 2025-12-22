@@ -78,6 +78,11 @@ export function parseAlteryxWorkflow(xmlString: string): AlteryxWorkflow {
         config = parseElement(configuration);
       }
       
+      // Repair corrupted configurations before cleaning
+      if (toolName === 'Join' || plugin.includes('Join')) {
+        config = repairJoinToolConfig(config);
+      }
+      
       // Clean configuration for cloud compatibility based on tool type
       config = cleanConfigurationForCloud(config, toolName, plugin);
       
@@ -206,8 +211,93 @@ function cleanConfigurationForCloud(
     return cleanJoinToolConfig(config);
   }
   
+  if (toolName === 'Formula' || plugin.includes('Formula')) {
+    return cleanFormulaToolConfig(config);
+  }
+  
+  if (toolName === 'Filter' || plugin.includes('Filter')) {
+    return cleanFilterToolConfig(config);
+  }
+  
   // For other tools, return as-is
   return config;
+}
+
+/**
+ * Repair corrupted Join tool configuration
+ */
+function repairJoinToolConfig(config: Record<string, any>): Record<string, any> {
+  const repaired = { ...config };
+  
+  // Fix missing or corrupted JoinInfo
+  if (!repaired.JoinInfo || typeof repaired.JoinInfo !== 'object') {
+    repaired.JoinInfo = {
+      '@connection': 'Left',
+      JoinField: []
+    };
+  }
+  
+  // Ensure JoinField is an array
+  if (repaired.JoinInfo.JoinField && !Array.isArray(repaired.JoinInfo.JoinField)) {
+    repaired.JoinInfo.JoinField = [repaired.JoinInfo.JoinField];
+  }
+  
+  // Fix SelectConfiguration structure
+  if (!repaired.SelectConfiguration) {
+    repaired.SelectConfiguration = {
+      Configuration: {
+        '@type': 'Auto',
+        '@name': ''
+      }
+    };
+  }
+  
+  return repaired;
+}
+
+/**
+ * Clean Formula tool configuration for cloud
+ */
+function cleanFormulaToolConfig(config: Record<string, any>): Record<string, any> {
+  const cleaned = { ...config };
+  
+  // Preserve formula expressions and field configurations
+  const preserveKeys = [
+    'FormulaFields',
+    'Expression',
+    'OutputField'
+  ];
+  
+  preserveKeys.forEach(key => {
+    if (config[key] !== undefined) {
+      cleaned[key] = config[key];
+    }
+  });
+  
+  cleaned.__cloudCompatible = true;
+  return cleaned;
+}
+
+/**
+ * Clean Filter tool configuration for cloud
+ */
+function cleanFilterToolConfig(config: Record<string, any>): Record<string, any> {
+  const cleaned = { ...config };
+  
+  // Preserve filter expressions
+  const preserveKeys = [
+    'Expression',
+    'Mode'
+  ];
+  
+  preserveKeys.forEach(key => {
+    if (config[key] !== undefined) {
+      cleaned[key] = config[key];
+    }
+  });
+  
+  cleaned.__cloudCompatible = true;
+  return cleaned;
 }
 
 /**
@@ -330,12 +420,14 @@ function cleanSelectToolConfig(config: Record<string, any>): Record<string, any>
 function cleanJoinToolConfig(config: Record<string, any>): Record<string, any> {
   const cleaned = { ...config };
   
-  // Preserve join configuration
+  // Preserve essential join configuration
   const preserveKeys = [
     'JoinByRecordPos',
-    'SelectConfiguration',
+    'SelectConfiguration', 
     'FixedFromFileName',
-    'CompositeKey'
+    'CompositeKey',
+    'JoinInfo',
+    'Equality'
   ];
   
   preserveKeys.forEach(key => {
@@ -344,22 +436,35 @@ function cleanJoinToolConfig(config: Record<string, any>): Record<string, any> {
     }
   });
   
-  // Ensure proper structure for join configuration
-  if (config.JoinInfo) {
-    cleaned.JoinInfo = config.JoinInfo;
+  // Ensure JoinInfo structure exists with proper defaults
+  if (!cleaned.JoinInfo) {
+    cleaned.JoinInfo = {
+      '@connection': 'Left',
+      JoinField: []
+    };
   }
   
-  // Preserve select field mappings
-  if (config.SelectConfiguration) {
-    cleaned.SelectConfiguration = config.SelectConfiguration;
-  } else {
-    // Initialize default SelectConfiguration
+  // Ensure SelectConfiguration exists with proper structure
+  if (!cleaned.SelectConfiguration) {
     cleaned.SelectConfiguration = {
       Configuration: {
         '@type': 'Auto',
         '@name': ''
       }
     };
+  }
+  
+  // Ensure Equality structure for join conditions
+  if (!cleaned.Equality) {
+    cleaned.Equality = {
+      Left: '',
+      Right: ''
+    };
+  }
+  
+  // Set default JoinByRecordPos if not specified
+  if (cleaned.JoinByRecordPos === undefined) {
+    cleaned.JoinByRecordPos = { '@value': 'False' };
   }
   
   cleaned.__cloudCompatible = true;

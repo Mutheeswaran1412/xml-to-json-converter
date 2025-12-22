@@ -1,5 +1,6 @@
 import { convertXmlToJson as baseConvert, detectFileType as baseDetect } from './xmlToJsonConverter';
 import { parseAlteryxWorkflow } from './workflowConverter';
+import { repairJoinToolInWorkflow } from './joinToolFixer';
 
 export function detectFileType(content: string): 'yxmd' | 'generic' {
   if (content.includes('AlteryxDocument') || content.includes('yxmdVer')) {
@@ -17,10 +18,35 @@ export async function convertXmlToJson(
       excludeNodes?: string[];
       includeOnlyNodes?: string[];
       removeAttributes?: string[];
-    }
+    };
+    fixJoinTools?: boolean;
   }
 ): Promise<string> {
   let processedXml = xmlString;
+  
+  // Fix Join tool configurations if requested (default: true for yxmd files)
+  const isYxmd = detectFileType(xmlString) === 'yxmd';
+  if ((options?.fixJoinTools !== false) && isYxmd) {
+    try {
+      const joinFixResult = repairJoinToolInWorkflow(processedXml);
+      processedXml = joinFixResult.fixedXml;
+      
+      // Log join tool fixes
+      if (joinFixResult.report.joinToolsFixed > 0) {
+        console.log(`🔧 Fixed ${joinFixResult.report.joinToolsFixed} Join tool(s)`);
+        joinFixResult.report.issues.forEach(issue => {
+          if (issue.fixed) {
+            console.log(`  ✅ Tool ${issue.toolId}: ${issue.issue}`);
+          } else {
+            console.log(`  ❌ Tool ${issue.toolId}: ${issue.issue}`);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Join tool repair failed:', error);
+      // Continue with original XML if repair fails
+    }
+  }
   
   // Apply filtering if parameters provided
   if (options?.filterParams) {

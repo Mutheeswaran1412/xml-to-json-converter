@@ -1321,31 +1321,52 @@ function convertJoinTool(cloudNode: any, originalNode: any): void {
   
   cloudNode.Properties = cloudNode.Properties || {};
   
-  // Create minimal valid Join configuration
-  cloudNode.Properties.Configuration = {
-    "@joinByRecordPos": "False",
-    "JoinInfo": [{
-      "@connection": "Left",
-      "@field": "empid"
-    }, {
-      "@connection": "Right", 
-      "@field": "empid"
-    }],
-    "SelectConfiguration": {
-      "Configuration": {
-        "@outputConnection": "Join",
-        "OrderChanged": { "@value": "False" },
-        "SelectFields": {
-          "SelectField": [{
-            "@field": "*Unknown",
-            "@selected": "True"
-          }]
-        }
-      }
-    }
+  // Fix corrupted Join configuration
+  const originalConfig = originalNode.Properties?.Configuration || {};
+  
+  // Create proper Join configuration structure
+  const joinConfig: any = {
+    "JoinByRecordPos": { "@value": "False" }
   };
   
-  // Minimal MetaInfo for all outputs
+  // Fix JoinInfo structure
+  if (originalConfig.JoinInfo) {
+    joinConfig.JoinInfo = {
+      "@connection": originalConfig.JoinInfo["@connection"] || "Left",
+      "JoinField": originalConfig.JoinInfo.JoinField || []
+    };
+  } else {
+    joinConfig.JoinInfo = {
+      "@connection": "Left",
+      "JoinField": []
+    };
+  }
+  
+  // Fix SelectConfiguration structure
+  if (originalConfig.SelectConfiguration) {
+    joinConfig.SelectConfiguration = originalConfig.SelectConfiguration;
+  } else {
+    joinConfig.SelectConfiguration = {
+      "Configuration": {
+        "@type": "Auto",
+        "@name": ""
+      }
+    };
+  }
+  
+  // Fix Equality structure
+  if (originalConfig.Equality) {
+    joinConfig.Equality = originalConfig.Equality;
+  } else {
+    joinConfig.Equality = {
+      "Left": "",
+      "Right": ""
+    };
+  }
+  
+  cloudNode.Properties.Configuration = joinConfig;
+  
+  // Create proper MetaInfo for all Join outputs
   cloudNode.Properties.MetaInfo = [{
     "@connection": "Join",
     "RecordInfo": { "Field": [] }
@@ -1358,6 +1379,8 @@ function convertJoinTool(cloudNode: any, originalNode: any): void {
   }];
   
   cloudNode.Properties.Dependencies = { "Implicit": {} };
+  
+  console.log(`   ✅ Join tool configuration fixed for cloud compatibility`);
 }
 
 function convertSortTool(cloudNode: any, originalNode: any): void {
