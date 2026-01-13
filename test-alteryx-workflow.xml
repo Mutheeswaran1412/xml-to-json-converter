@@ -1,0 +1,190 @@
+<?xml version="1.0"?>
+<AlteryxDocument yxmdVer="2021.4">
+  <Nodes>
+    <Node ToolID="1">
+      <Properties>
+        <MetaInfo connection="Output">
+          <RecordInfo>
+            <Field name="empid" type="V_WString" trifactaType="String"/>
+            <Field name="empname" type="V_WString" trifactaType="String"/>
+            <Field name="salary" type="V_WString" trifactaType="String"/>
+            <Field name="comm" type="V_WString" trifactaType="String"/>
+            <Field name="join-date" type="V_WString" trifactaType="String"/>
+            <Field name="active" type="V_WString" trifactaType="String"/>
+            <Field name="Bonus" type="V_WString" trifactaType="String"/>
+          </RecordInfo>
+        </MetaInfo>
+        <Annotation>
+          <Left value="False"/>
+          <Name></Name>
+          <DisplayMode>0</DisplayMode>
+          <AnnotationText></AnnotationText>
+          <DefaultAnnotationText>empdata.csv</DefaultAnnotationText>
+        </Annotation>
+        <Configuration>
+          <__page>LIST_CONNECTIONS</__page>
+          <DatasetId>511429</DatasetId>
+          <VendorName></VendorName>
+          <HasInferred>false</HasInferred>
+          <__tableName></__tableName>
+          <ConnectionId></ConnectionId>
+          <__sampleInfo>
+            <createdAt>Oct 30, 2025 9:11 PM</createdAt>
+          </__sampleInfo>
+          <__schemaName></__schemaName>
+          <SampleFileUri>tfs://trintetech-alteryx-trial-3tjn/110683/uploads/bca536a0-3963-4062-9026-b075afe4b273/empdata.csv</SampleFileUri>
+          <ConnectionName></ConnectionName>
+          <__previousPage>LIST_CONNECTIONS</__previousPage>
+        </Configuration>
+      </Properties>
+      <GuiSettings Plugin="AlteryxBasePluginsGui.UniversalInput.UniversalInput">
+        <Position x="100" y="100"/>
+      </GuiSettings>
+      <EngineSettings EngineDll="UniversalInputTool.dll" EngineDllEntryPoint="UniversalInputTool"/>
+    </Node>
+    <Node ToolID="2">
+      <Properties>
+        <MetaInfo connection="Output">
+          <RecordInfo>
+            <Field/>
+          </RecordInfo>
+        </MetaInfo>
+        <Annotation>
+          <Left value="False"/>
+          <Name></Name>
+          <DisplayMode>0</DisplayMode>
+          <AnnotationText></AnnotationText>
+          <DefaultAnnotationText></DefaultAnnotationText>
+        </Annotation>
+        <Configuration>
+          <CommaDecimal value="False"/>
+          <OrderChanged value="False"/>
+          <SelectFields>
+            <SelectField field="*Unknown" selected="True"/>
+          </SelectFields>
+        </Configuration>
+      </Properties>
+      <GuiSettings Plugin="AlteryxBasePluginsGui.AlteryxSelect.AlteryxSelect">
+        <Position x="213" y="102.99999999999999"/>
+      </GuiSettings>
+      <EngineSettings EngineDll="AlteryxBasePluginsEngine.dll" EngineDllEntryPoint="AlteryxSelect"/>
+    </Node>
+    <Node ToolID="3">
+      <Properties>
+        <Annotation>
+          <Left value="False"/>
+          <Name></Name>
+          <DisplayMode>0</DisplayMode>
+          <AnnotationText></AnnotationText>
+          <DefaultAnnotationText></DefaultAnnotationText>
+        </Annotation>
+        <Configuration>
+          <Path>tfs://trintetech-alteryx-trial-3tjn/110683/test.csv</Path>
+          <Delim>,</Delim>
+          <Action>create</Action>
+          <Format>csv</Format>
+          <Header>true</Header>
+          <__page>LIST_CONNECTIONS</__page>
+          <FileName>test</FileName>
+          <DatasetId>511435</DatasetId>
+          <HasQuotes>true</HasQuotes>
+          <Operation>create</Operation>
+          <SheetName>Sheet1</SheetName>
+          <TableName></TableName>
+          <TargetType></TargetType>
+          <VendorName></VendorName>
+          <__isLoaded>true</__isLoaded>
+          <TableSchema></TableSchema>
+          <ColsToUpdate></ColsToUpdate>
+          <ConnectionId>-1</ConnectionId>
+          <InsertChecked></InsertChecked>
+          <MergeJoinKeys></MergeJoinKeys>
+          <PartitionName>suffixToFileName</PartitionName>
+          <PartitionType>noPartition</PartitionType>
+          <ConnectionName></ConnectionName>
+          <OutputObjectId></OutputObjectId>
+          <OutputSettings></OutputSettings>
+          <__previousPage>LIST_CONNECTIONS</__previousPage>
+          <LastBrowsedPath></LastBrowsedPath>
+          <TableSchemaList></TableSchemaList>
+          <OnEveryRunAction></OnEveryRunAction>
+          <SelectedProtocol>tfs</SelectedProtocol>
+          <DatasetOriginator>true</DatasetOriginator>
+          <IncludeMismatches>false</IncludeMismatches>
+          <MatchedRowsAction></MatchedRowsAction>
+          <FileWriterSettingsId></FileWriterSettingsId>
+          <PartitionUsingColumn></PartitionUsingColumn>
+          <PublicationSettingsId></PublicationSettingsId>
+          <ConversionOutputSettings>
+            <action>create</action>
+            <subAction>create</subAction>
+          </ConversionOutputSettings>
+          <ColumnOutputConfiguration></ColumnOutputConfiguration>
+          <DeleteUnmatchedRowsInTarget></DeleteUnmatchedRowsInTarget>
+          <SelectedColumnInclusionInPartition>true</SelectedColumnInclusionInPartition>
+        </Configuration>
+      </Properties>
+      <GuiSettings Plugin="AlteryxBasePluginsGui.UniversalOutput.UniversalOutput">
+        <Position x="314.80000000000007" y="102.2"/>
+      </GuiSettings>
+      <EngineSettings EngineDll="UniversalOutputTool.dll" EngineDllEntryPoint="UniversalOutputTool"/>
+    </Node>
+  </Nodes>
+  <Properties>
+    <Events>
+      <Enabled value="True"/>
+    </Events>
+    <Memory default="True"/>
+    <MetaInfo>
+      <Name></Name>
+      <Author></Author>
+      <Company></Company>
+      <Example>
+        <File></File>
+        <Description></Description>
+      </Example>
+      <ToolInDb value="False"/>
+      <Copyright></Copyright>
+      <Telemetry>
+        <OriginWorkflowId value=""/>
+        <PreviousWorkflowId value=""/>
+      </Telemetry>
+      <SearchTags></SearchTags>
+      <WorkflowId value=""/>
+      <Description></Description>
+      <ToolVersion></ToolVersion>
+      <CategoryName></CategoryName>
+      <RootToolName></RootToolName>
+      <NameIsFileName value="True"/>
+      <DescriptionLink actual="" displayed=""/>
+    </MetaInfo>
+    <DefaultTZ value="Etc/UTC"/>
+    <RunWithE2 value="True"/>
+    <TempFiles default="True"/>
+    <ZoomLevel value="0"/>
+    <Annotation on="True" includeToolName="False"/>
+    <LayoutType>Horizontal</LayoutType>
+    <WorkflowMode value="standard"/>
+    <CancelOnError value="False"/>
+    <DisableBrowse value="False"/>
+    <ConvErrorLimit value="10"/>
+    <DisableAllOutput value="False"/>
+    <GlobalRecordLimit value="0"/>
+    <ConvErrorLimit_Stop value="False"/>
+    <ShowAllMacroMessages value="False"/>
+    <CloudDisableAutorename value="True"/>
+    <ShowConnectionStatusIsOn value="True"/>
+    <EnablePerformanceProfiling value="False"/>
+    <ShowConnectionStatusOnlyWhenRunning value="True"/>
+  </Properties>
+  <Connections>
+    <Connection name="">
+      <Origin ToolID="1" Connection="Output"/>
+      <Destination ToolID="2" Connection="Input"/>
+    </Connection>
+    <Connection name="">
+      <Origin ToolID="2" Connection="Output"/>
+      <Destination ToolID="3" Connection="Input"/>
+    </Connection>
+  </Connections>
+</AlteryxDocument>

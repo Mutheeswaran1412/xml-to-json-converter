@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<AlteryxDocument yxmdVer="2021.4">
+  <Nodes>
+    <Node ToolID="1">
+      <GuiSettings Plugin="AlteryxBasePluginsGui.UniversalInput.UniversalInput">
+        <Position x="73" y="163" />
+      </GuiSettings>
+      <Properties>
+        <Configuration>
+          <DatasetId>560409</DatasetId>
+        </Configuration>
+      </Properties>
+    </Node>
+    <Node ToolID="2">
+      <GuiSettings Plugin="AlteryxBasePluginsGui.UniversalOutput.UniversalOutput">
+        <Position x="209" y="164" />
+      </GuiSettings>
+      <Properties>
+        <Configuration>
+          <DatasetId>563030</DatasetId>
+        </Configuration>
+      </Properties>
+    </Node>
+  </Nodes>
+  <Properties>
+    <MetaInfo>
+      <Name></Name>
+    </MetaInfo>
+    <WorkflowMode value="standard" />
+  </Properties>
+  <Connections>
+    <Connection name="">
+      <Origin ToolID="1" Connection="Output" />
+      <Destination ToolID="2" Connection="Input" />
+    </Connection>
+  </Connections>
+</AlteryxDocument>

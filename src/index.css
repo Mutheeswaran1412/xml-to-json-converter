@@ -1,0 +1,227 @@
+/* CSS linter may show warnings for @tailwind - this is normal and expected */
+/* These directives are processed by PostCSS during build */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-dark: #041c2c;
+  --bg-mid: #052f45;
+  --bg-glow: #0f7ea6;
+  --text-soft: #c7d4dd;
+}
+
+@layer base {
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    color: #ffffff;
+    background:
+      radial-gradient(
+        900px circle at 38% 42%,
+        #0f7ea6 0%,
+        #0a5c7a 28%,
+        #052f45 55%,
+        #041c2c 78%,
+        #031521 100%
+      );
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(
+      circle at center,
+      transparent 45%,
+      rgba(0,0,0,0.45) 100%
+    );
+    pointer-events: none;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  }
+
+  /* Text selection styling - stronger override */
+  * ::selection {
+    background-color: #1f4e79 !important;
+    color: #ffffff !important;
+  }
+
+  * ::-moz-selection {
+    background-color: #1f4e79 !important;
+    color: #ffffff !important;
+  }
+
+  body ::selection {
+    background-color: #1f4e79 !important;
+    color: #ffffff !important;
+  }
+
+  body ::-moz-selection {
+    background-color: #1f4e79 !important;
+    color: #ffffff !important;
+  }
+
+  /* Navigation bar - transparent background */
+  nav .bg-white {
+    background: transparent !important;
+  }
+
+  /* Navigation text - no hover effects */
+  nav .text-slate-900,
+  nav .text-black,
+  nav button {
+    color: #1e293b !important;
+  }
+
+  nav button:hover,
+  nav button:focus,
+  nav button:active {
+    color: #1e293b !important;
+    background-color: transparent !important;
+    background: none !important;
+  }
+
+  /* Disable all hover effects in navigation */
+  nav .hover\:bg-gray-100:hover {
+    background-color: transparent !important;
+  }
+
+  /* Active navigation button */
+  nav button.bg-blue-600 {
+    background-color: #1f4e79 !important;
+    color: #ffffff !important;
+  }
+
+  /* Alteryx themed containers - better visibility */
+  .bg-gray-50 {
+    background: rgba(31, 78, 121, 0.25) !important;
+    border: 1px solid rgba(31, 78, 121, 0.5) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .bg-white {
+    background: rgba(31, 78, 121, 0.18) !important;
+    border: 1px solid rgba(31, 78, 121, 0.4) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Text colors for darker Alteryx theme - more visible white */
+  .text-black {
+    color: #ffffff !important;
+  }
+
+  .text-gray-600 {
+    color: #cbd5e1 !important;
+  }
+
+  /* Input fields with darker theme - more visible text */
+  input[type="text"], textarea, select {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(31, 78, 121, 0.4) !important;
+    color: #ffffff !important;
+  }
+
+  input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: var(--alteryx-blue) !important;
+    box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.2) !important;
+  }
+
+  input[type="text"]::placeholder, textarea::placeholder {
+    color: #cbd5e1 !important;
+  }
+
+  /* Status colors for better visibility */
+  .text-red-600 {
+    color: #ff4444 !important;
+    font-weight: 600 !important;
+  }
+
+  .text-green-600 {
+    color: #22c55e !important;
+    font-weight: 600 !important;
+  }
+
+  .text-yellow-600 {
+    color: #fbbf24 !important;
+    font-weight: 600 !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+  }
+
+  /* Header navigation buttons - keep transparent */
+  nav button {
+    background: transparent !important;
+    color: var(--text-soft) !important;
+    border: none !important;
+    padding: 8px 16px !important;
+  }
+
+  nav button:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    transform: none !important;
+  }
+
+  /* All content buttons use Alteryx colors - stronger override */
+  button:not(nav button),
+  .btn,
+  [type="button"],
+  [type="submit"],
+  [role="button"] {
+    background: var(--bg-glow) !important;
+    color: #ffffff !important;
+    border: none !important;
+    transition: all 0.2s ease !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+  }
+
+  button:not(nav button):hover,
+  .btn:hover,
+  [type="button"]:hover,
+  [type="submit"]:hover,
+  [role="button"]:hover {
+    background: var(--bg-mid) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  button {
+    color: var(--text-soft);
+  }
+
+  input, textarea, select {
+    color: #1f2937;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-color: #6b7280;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  button,
+  input[type="button"],
+  input[type="reset"],
+  input[type="submit"] {
+    -webkit-appearance: button;
+    appearance: button;
+  }
+
+  [type="search"] {
+    -webkit-appearance: textfield;
+    appearance: textfield;
+  }
+}

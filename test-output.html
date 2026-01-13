@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML to JSON Converter Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .output { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>XML to JSON Converter - New Structure</h1>
+    <p>Testing the updated converter with the lead's requirements:</p>
+    
+    <h2>Expected JSON Structure:</h2>
+    <div class="output">
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        // Sample XML content (simplified)
+        const xmlContent = `<?xml version="1.0"?>
+<AlteryxDocument yxmdVer="2023.1">
+  <Nodes>
+    <Node ToolID="1">
+      <GuiSettings Plugin="AlteryxBasePluginsGui.DbFileInput.DbFileInput" X="54" Y="162">
+        <Position x="54" y="162" />
+      </GuiSettings>
+      <Properties>
+        <Configuration>
+          <File OutputFileName="" RecordLimit="">C:\\Data\\input.csv</File>
+        </Configuration>
+        <Annotation DisplayMode="0">
+          <Name />
+          <DefaultAnnotationText>input.csv</DefaultAnnotationText>
+        </Annotation>
+      </Properties>
+      <EngineSettings EngineDll="AlteryxBasePluginsEngine.dll" EngineDllEntryPoint="AlteryxDbFileInput" />
+    </Node>
+  </Nodes>
+  <Connections>
+    <Connection>
+      <Origin ToolID="1" Connection="Output" />
+      <Destination ToolID="2" Connection="Input" />
+    </Connection>
+  </Connections>
+  <Properties>
+    <Memory default="True" />
+    <GlobalRecordLimit value="0" />
+  </Properties>
+</AlteryxDocument>`;
+
+        function parseAlteryxWorkflow(xmlString) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+            
+            const workflow = {
+                Nodes: [],
+                Properties: {},
+                Connections: []
+            };
+
+            // Extract nodes with tool details and metadata
+            const nodes = xmlDoc.querySelectorAll('Node');
+            nodes.forEach(nodeElement => {
+                const guiSettings = nodeElement.querySelector('GuiSettings');
+                const properties = nodeElement.querySelector('Properties');
+                const engineSettings = nodeElement.querySelector('EngineSettings');
+                
+                const node = {
+                    toolId: nodeElement.getAttribute('ToolID') || '',
+                    toolName: guiSettings?.getAttribute('Plugin')?.split('.').pop() || 'Unknown',
+                    plugin: guiSettings?.getAttribute('Plugin') || '',
+                    position: {
+                        x: parseInt(guiSettings?.getAttribute('X') || '0'),
+                        y: parseInt(guiSettings?.getAttribute('Y') || '0')
+                    },
+                    metadata: {
+                        configuration: {}
+                    }
+                };
+
+                // Extract configuration
+                if (properties) {
+                    const config = {};
+                    const configuration = properties.querySelector('Configuration');
+                    if (configuration) {
+                        Array.from(configuration.children).forEach(child => {
+                            config[child.tagName] = parseElement(child);
+                        });
+                    }
+                    
+                    const annotation = properties.querySelector('Annotation');
+                    if (annotation) {
+                        node.metadata.annotation = parseElement(annotation);
+                    }
+                    
+                    node.metadata.configuration = config;
+                }
+
+                // Extract engine settings
+                if (engineSettings) {
+                    const settings = {};
+                    Array.from(engineSettings.attributes).forEach(attr => {
+                        settings[attr.name] = attr.value;
+                    });
+                    node.metadata.engineSettings = settings;
+                }
+
+                workflow.Nodes.push(node);
+            });
+
+            // Extract connections
+            const connections = xmlDoc.querySelectorAll('Connection');
+            connections.forEach(connElement => {
+                const origin = connElement.querySelector('Origin');
+                const destination = connElement.querySelector('Destination');
+                
+                if (origin && destination) {
+                    const connection = {
+                        origin: {
+                            toolId: origin.getAttribute('ToolID') || '',
+                            connection: origin.getAttribute('Connection') || ''
+                        },
+                        destination: {
+                            toolId: destination.getAttribute('ToolID') || '',
+                            connection: destination.getAttribute('Connection') || ''
+                        }
+                    };
+                    workflow.Connections.push(connection);
+                }
+            });
+
+            // Extract workflow properties
+            const workflowProps = xmlDoc.querySelector('Properties');
+            if (workflowProps) {
+                workflow.Properties = parseElement(workflowProps);
+            }
+
+            return workflow;
+        }
+
+        function parseElement(element) {
+            const result = {};
+            
+            // Add attributes
+            if (element.attributes.length > 0) {
+                Array.from(element.attributes).forEach(attr => {
+                    result[`@${attr.name}`] = attr.value;
+                });
+            }
+            
+            // Add child elements
+            if (element.children.length > 0) {
+                Array.from(element.children).forEach(child => {
+                    const childValue = parseElement(child);
+                    if (result[child.tagName]) {
+                        if (!Array.isArray(result[child.tagName])) {
+                            result[child.tagName] = [result[child.tagName]];
+                        }
+                        result[child.tagName].push(childValue);
+                    } else {
+                        result[child.tagName] = childValue;
+                    }
+                });
+            }
+            
+            // Add text content if no children
+            if (element.children.length === 0 && element.textContent?.trim()) {
+                if (Object.keys(result).length === 0) {
+                    return element.textContent.trim();
+                }
+                result['#text'] = element.textContent.trim();
+            }
+            
+            return Object.keys(result).length === 0 ? null : result;
+        }
+
+        // Test the converter
+        const result = parseAlteryxWorkflow(xmlContent);
+        document.getElementById('output').textContent = JSON.stringify(result, null, 2);
+    </script>
+</body>
+</html>

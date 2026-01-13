@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Test XML with various edge cases -->
+<testDocument xmlns:custom="http://example.com/custom" version="1.0">
+  
+  <!-- Empty elements -->
+  <emptyElement/>
+  <emptyWithAttr id="123"/>
+  <emptyWithText></emptyWithText>
+  
+  <!-- Duplicate element names -->
+  <items>
+    <item id="1">First item</item>
+    <item id="2">Second item</item>
+    <item id="3">Third item</item>
+  </items>
+  
+  <!-- Mixed content -->
+  <mixedContent>
+    This is text content
+    <child>Child element</child>
+    More text here
+    <anotherChild attr="value">Another child</anotherChild>
+  </mixedContent>
+  
+  <!-- Nested structures -->
+  <deepNesting>
+    <level1>
+      <level2>
+        <level3>
+          <level4 data="deep">Deep value</level4>
+        </level3>
+      </level2>
+    </level1>
+  </deepNesting>
+  
+  <!-- Special characters and CDATA -->
+  <specialChars>
+    <encoded>&lt;tag&gt; &amp; "quotes" &apos;apostrophe&apos;</encoded>
+    <cdata><![CDATA[<raw>XML content</raw> & special chars]]></cdata>
+  </specialChars>
+  
+  <!-- Various data types -->
+  <dataTypes>
+    <string>Hello World</string>
+    <number>123.456</number>
+    <integer>789</integer>
+    <boolean>true</boolean>
+    <date>2024-01-15T10:30:00Z</date>
+    <null></null>
+  </dataTypes>
+  
+  <!-- Attributes with different types -->
+  <attributes 
+    stringAttr="text value"
+    numericAttr="42"
+    booleanAttr="false"
+    emptyAttr=""
+    custom:namespaced="namespaced value"/>
+  
+  <!-- Complex Alteryx-like structure -->
+  <workflow>
+    <nodes>
+      <node toolId="1" type="input">
+        <properties>
+          <metaInfo connection="Output">
+            <recordInfo>
+              <field name="id" type="Int32"/>
+              <field name="name" type="V_WString" size="255"/>
+            </recordInfo>
+          </metaInfo>
+        </properties>
+      </node>
+    </nodes>
+    <connections>
+      <connection name="">
+        <origin toolId="1" connection="Output"/>
+        <destination toolId="2" connection="Input"/>
+      </connection>
+    </connections>
+  </workflow>
+  
+</testDocument>

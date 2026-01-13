@@ -1,0 +1,32 @@
+Add this code after line 831 (before cloudNode.Properties.Dependencies):
+
+  // Add new formula fields to MetaInfo
+  const config = cloudNode.Properties.Configuration;
+  if (config?.FormulaFields?.FormulaField) {
+    const formulaFields = Array.isArray(config.FormulaFields.FormulaField)
+      ? config.FormulaFields.FormulaField
+      : [config.FormulaFields.FormulaField];
+    
+    const metaFields = cloudNode.Properties.MetaInfo.RecordInfo?.Field || [];
+    const existingFieldNames = new Set(metaFields.map((f: any) => f["@name"]));
+    
+    formulaFields.forEach((ff: any) => {
+      const fieldName = ff["@field"];
+      const fieldType = ff["@type"] || "V_String";
+      const fieldSize = ff["@size"] || "254";
+      
+      if (fieldName && !existingFieldNames.has(fieldName)) {
+        metaFields.push({
+          "@name": fieldName,
+          "@type": fieldType,
+          "@size": fieldSize,
+          "@source": "Formula"
+        });
+        console.log(`   📝 Added "${fieldName}" to MetaInfo`);
+      }
+    });
+    
+    if (Array.isArray(metaFields) && metaFields.length > 0) {
+      cloudNode.Properties.MetaInfo.RecordInfo.Field = metaFields;
+    }
+  }
