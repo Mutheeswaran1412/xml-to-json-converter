@@ -1014,18 +1014,103 @@ function convertJoinTool(cloudNode: any, originalNode: any, upstreamMap?: Map<st
   };
  
   cloudNode.Properties = cloudNode.Properties || {};
+  
+  // 🔥 CRITICAL: Copy COMPLETE Configuration from Desktop XML (including SelectConfiguration)
+  if (originalNode.Properties?.Configuration) {
+    cloudNode.Properties.Configuration = JSON.parse(JSON.stringify(originalNode.Properties.Configuration));
+    console.log(`   ✅ Copied full Configuration from Desktop XML`);
+    
+    // Log what we got
+    const joinInfo = cloudNode.Properties.Configuration.JoinInfo;
+    const selectConfig = cloudNode.Properties.Configuration.SelectConfiguration;
+    console.log(`   📋 JoinInfo:`, joinInfo ? 'Present' : 'Missing');
+    console.log(`   📋 SelectConfiguration:`, selectConfig ? 'Present' : 'Missing');
+  } else {
+    console.log(`   ⚠️ No Configuration in Desktop XML - creating default`);
+    cloudNode.Properties.Configuration = {
+      "@joinByRecordPos": { "@value": "False" },
+      "JoinInfo": []
+    };
+  }
  
-  cloudNode.Properties.Configuration = {
-    "@joinByRecordPos": {
-      "@value": originalNode.Properties?.Configuration?.["@joinByRecordPos"] ?? "False"
+  // 🔥 CRITICAL: Copy MetaInfo from Desktop XML if available
+  if (originalNode.Properties?.MetaInfo) {
+    cloudNode.Properties.MetaInfo = JSON.parse(JSON.stringify(originalNode.Properties.MetaInfo));
+    console.log(`   ✅ Copied MetaInfo from Desktop XML`);
+    return;
+  }
+  
+  console.log(`   ⚠️ No MetaInfo in Desktop XML - building from upstream`);
+  
+  // Fallback: Collect from upstream tools
+  const upstreamIds = upstreamMap?.get(cloudNode['@ToolID']) || [];
+  let leftFields: any[] = [];
+  let rightFields: any[] = [];
+  
+  if (upstreamIds.length >= 2 && nodesMap) {
+    const leftUpstream = nodesMap.get(upstreamIds[0]);
+    const leftFieldList = leftUpstream?.Properties?.MetaInfo?.RecordInfo?.Field;
+    if (leftFieldList) {
+      leftFields = Array.isArray(leftFieldList) ? leftFieldList : [leftFieldList];
+    }
+    
+    const rightUpstream = nodesMap.get(upstreamIds[1]);
+    const rightFieldList = rightUpstream?.Properties?.MetaInfo?.RecordInfo?.Field;
+    if (rightFieldList) {
+      rightFields = Array.isArray(rightFieldList) ? rightFieldList : [rightFieldList];
+    }
+  }
+  
+  // Extract join keys from JoinInfo
+  const joinKeys = (cloudNode.Properties.Configuration.JoinInfo || [])
+    .map((j: any) => j.Field?.["@field"])
+    .filter(Boolean);
+  
+  const joinKeyFallback = joinKeys.map((k: string) => ({
+    "@name": k,
+    "@type": detectFieldType(k),
+    "@size": detectFieldType(k) === "V_String" ? "254" : "8",
+    "@source": "JoinKey"
+  }));
+  
+  const placeholderField = [{
+    "@name": "_auto",
+    "@type": "V_String",
+    "@size": "1",
+    "@source": "Auto"
+  }];
+  
+  const safeLeftFields = 
+    leftFields.length > 0 ? leftFields :
+    joinKeyFallback.length > 0 ? joinKeyFallback :
+    placeholderField;
+  
+  const safeRightFields = 
+    rightFields.length > 0 ? rightFields :
+    joinKeyFallback.length > 0 ? joinKeyFallback :
+    placeholderField;
+  
+  const allFieldsMap = new Map<string, any>();
+  [...safeLeftFields, ...safeRightFields].forEach(f => {
+    if (f["@name"] && !allFieldsMap.has(f["@name"])) {
+      allFieldsMap.set(f["@name"], f);
+    }
+  });
+  const joinFields = Array.from(allFieldsMap.values());
+  
+  cloudNode.Properties.MetaInfo = [
+    {
+      "@connection": "Left",
+      "RecordInfo": { "Field": safeLeftFields }
     },
-    "JoinInfo": originalNode.Properties?.Configuration?.JoinInfo || []
-  };
- 
-  cloudNode.Properties.MetaInfo = originalNode.Properties?.MetaInfo ?? [
-    { "@connection": "Join", "RecordInfo": { "Field": [] } },
-    { "@connection": "Left", "RecordInfo": { "Field": [] } },
-    { "@connection": "Right", "RecordInfo": { "Field": [] } }
+    {
+      "@connection": "Right",
+      "RecordInfo": { "Field": safeRightFields }
+    },
+    {
+      "@connection": "Join",
+      "RecordInfo": { "Field": joinFields }
+    }
   ];
 }
 
